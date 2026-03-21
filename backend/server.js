@@ -3,10 +3,15 @@ const express = require('express');
 const db = require('./models')
 const connectDB = require('./config/connectDB')
 
+const sensorDataRoutes = require('./routers/sensor-data.route')
+
 const app = express();
 const port = process.env.PORT || 8081;
 
 // app.use() cors, express.json(), routes
+
+app.use(express.json());
+app.use('/api/sensor-data', sensorDataRoutes);
 
 connectDB();
 
