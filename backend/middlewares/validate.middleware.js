@@ -4,8 +4,8 @@ const validate = (schema) => (req, res, next) => {
         stripUnknown: true // Loại bỏ các tham số lạ không có trong schema
     });
 
-    console.log("Input của Joi:", req.query);
-    console.log("Output của Joi (value):", value);
+    // console.log("Input của Joi:", req.query);
+    // console.log("Output của Joi (value):", value);
 
     if (error) {
         const errorMessage = error.details.map((details) => details.message).join(', ');
