@@ -16,12 +16,30 @@ module.exports = (sequelize, DataTypes) => {
         as: 'actions' // This lets you use device.actions in your code
       });
     }
+
+    static async getCurrentStatuses({ status, name } = {}) {
+      const whereConditions = {};
+
+      // Hỗ trợ lọc theo trạng thái hoặc tên nếu Frontend cần truyền query params
+      if (status) whereConditions.status = status;
+      if (name) whereConditions.name = name;
+
+      return await this.findAll({
+          where: whereConditions,
+          // Chỉ lấy các cột cần thiết cho Frontend, bỏ qua createdAt để nhẹ payload
+          attributes: ['id', 'name', 'status', 'updatedAt'], 
+          order: [['id', 'ASC']] // Sắp xếp theo ID để hiển thị UI không bị nhảy vị trí
+      });
+    }
   }
+
+
   Device.init({
     name: DataTypes.STRING,
-    type: {
+    status: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: false,
+      defaultValue: 'OFF'
     }
   }, {
     sequelize,
