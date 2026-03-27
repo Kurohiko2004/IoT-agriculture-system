@@ -1,7 +1,8 @@
 'use strict';
 const {
-  Model
+  Model, Op
 } = require('sequelize');
+
 module.exports = (sequelize, DataTypes) => {
   class SensorData extends Model {
     /**
@@ -16,7 +17,40 @@ module.exports = (sequelize, DataTypes) => {
         as: `sensor`
       })
     }
+
+    /**
+     * Retrieves all sensor data with pagination, filtering, searching, and sorting.
+     */
+    static async findAllData({ limit, offset, type, search, sortBy, sortOrder }) {
+        const whereConditions = {};
+
+        if (type) whereConditions.type = type;
+
+        if (search) {
+            whereConditions[Op.or] = [
+                { type: { [Op.like]: `%${search}%` } },
+                sequelize.where(
+                    sequelize.cast(sequelize.col('measuredAt'), 'CHAR'),
+                    { [Op.like]: `%${search}%` }
+                )
+            ];
+        }
+
+        return await this.findAndCountAll({
+            where: whereConditions,
+            limit,
+            offset,
+            order: [[sortBy, sortOrder]],
+            include: [{ 
+              association: 'sensor', 
+              attributes: ['name'] 
+            }]
+        });
+    }
   }
+
+
+
   SensorData.init({
     value: {
       type: DataTypes.FLOAT, 
