@@ -1,6 +1,6 @@
 const Joi = require('joi');
 
-const getActionHistorySchema = Joi.object({
+const getActionSchema = Joi.object({
     page: Joi.number().integer().min(1).default(1),
     items: Joi.number().integer().valid(5, 10, 15, 20).default(10),
     
@@ -14,4 +14,4 @@ const getActionHistorySchema = Joi.object({
     sortOrder: Joi.string().valid('ASC', 'DESC').default('DESC')
 });
 
-module.exports = { getActionHistorySchema };
+module.exports = { getActionSchema };
