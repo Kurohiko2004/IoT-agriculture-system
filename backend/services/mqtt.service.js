@@ -1,9 +1,9 @@
+// nơi lắng nghe gói tin ack (listening)
+
 'use strict';
 const mqtt = require('mqtt');
 const mqttConfig = require('../config/mqtt.config');
 const db = require('../models');
-
-const INTERVAL = 10000;
 
 class MqttService {
     constructor() {
@@ -17,7 +17,7 @@ class MqttService {
 
         // Dùng arrow function để giữ ngữ cảnh 'this'
         this.client.on('connect', () => {
-            console.log('✅ MQTT Connected');
+            console.log('MQTT Connected');
             this.client.subscribe([mqttConfig.topics.data, mqttConfig.topics.ack]);
         });
 
@@ -39,8 +39,6 @@ class MqttService {
         });
     }
 
-    // Hàm xử lý dữ liệu sensor gửi lên
-    // services/mqtt.service.js
     async handleSensorData(payload) {
         let data;
 
@@ -85,37 +83,24 @@ class MqttService {
     // Khi ESP32 gửi tin nhắn xác nhận về
     handleAck(payload) {
         try {
-            const { actionId, status } = JSON.parse(payload);
-            if (this.callbacks[actionId]) {
-                // Gọi hàm callback để giải phóng Promise đang đợi ở API
-                this.callbacks[actionId](status); 
-                delete this.callbacks[actionId]; // Xóa sau khi dùng xong
-            }
+            const data = JSON.parse(payload);
+            // Gói tin chuẩn ESP32 gửi lên: { actionId, deviceId, status }
+            
+            // HÉT LÊN LOA NỘI BỘ, KHÔNG ĐỤNG DATABASE Ở ĐÂY
+            eventBus.emit('MQTT_ACK_RECEIVED', data); 
+            
         } catch (e) {
-            console.error('❌ Lỗi xử lý ACK:', e.message);
+            console.error('❌ Lỗi xử lý JSON ACK:', e.message);
         }
     }
 
-    // Hàm gửi lệnh và đợi xác nhận trong 10s
-    sendCommandWithTimeout(actionId, message, timeout = INTERVAL) {
-        return new Promise((resolve, reject) => {
-            // Thiết lập Timer
-            const timer = setTimeout(() => {
-                if (this.callbacks[actionId]) {
-                    delete this.callbacks[actionId];
-                    reject(new Error('TIMEOUT_NO_RESPONSE'));
-                }
-            }, timeout);
-
-            // Thiết lập callback
-            this.callbacks[actionId] = (status) => {
-                clearTimeout(timer);
-                resolve(status);
-            };
-
-            // Gửi lệnh
-            this.client.publish(mqttConfig.topics.device, JSON.stringify({ actionId, ...message }));
-        });
+    publishControl(topic, payloadObj) {
+        if (this.client && this.client.connected) {
+            this.client.publish(topic, JSON.stringify(payloadObj));
+            console.log(`[MQTT PUB] Đã gửi lệnh:`, payloadObj);
+        } else {
+            console.error('❌ MQTT chưa kết nối!');
+        }
     }
 }
 

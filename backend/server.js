@@ -1,9 +1,9 @@
 require('dotenv').config();
 const express = require('express');
-const db = require('./models')
 
 const connectDB = require('./config/connectDB')
 const mqttService = require('./services/mqtt.service');
+require('./services/action.handler');
 
 const sensorDataRoutes = require('./routers/sensor-data.route')
 const actionRoutes = require('./routers/action.route')
