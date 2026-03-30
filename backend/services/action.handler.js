@@ -11,6 +11,12 @@ eventBus.on('MQTT_ACK_RECEIVED', async (payload) => {
         const record = await db.Action.findByPk(actionId);
 
         if (record && record.status === 'PENDING') {
+            if (Number(record.deviceId) !== Number(deviceId)) {
+                console.error(`[CẢNH BÁO] Sai lệch thiết bị! Action ${actionId} thuộc về 
+                    Device ${record.deviceId}, nhưng ACK báo từ Device ${deviceId}`);
+                return;
+            }
+
             // 1. Ghi nhận thành công vào DB Action
             await record.update({ status: status || 'SUCCESS' });
 

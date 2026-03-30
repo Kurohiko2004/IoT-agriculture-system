@@ -13,7 +13,7 @@ module.exports = {
     },
     topics: {
         data: 'home/room100/data',      // Dữ liệu sensor gửi lên
-        device: 'home/room100/device',  // Server bắn lệnh xuống (ON/OFF)
+        control: 'home/room100/control',  // Server bắn lệnh xuống (ON/OFF)
         ack: 'home/room100/ack'         // ESP32 xác nhận đã làm xong
     }
 };

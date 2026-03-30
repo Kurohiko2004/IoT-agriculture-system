@@ -10,6 +10,7 @@ const actionRoutes = require('./routers/action.route')
 const deviceRoutes = require('./routers/device.route')
 
 
+const { cleanupPendingActions } = require('./services/startup.service');
 
 const app = express();
 const port = process.env.PORT || 8081;
@@ -27,6 +28,12 @@ connectDB();
 app.listen(port, async () => {
     console.log(` Server đang chạy trên cổng ${port}`);
     mqttService.connect();
+    try {
+        await cleanupPendingActions();
+        console.log('✅ Hoàn tất kiểm tra và dọn dẹp lệnh cũ.');
+    } catch (error) {
+        console.error('❌ Lỗi dọn dẹp khi khởi động:', error);
+    }
 });
 
 

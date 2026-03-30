@@ -4,7 +4,7 @@ const mqttService = require('../services/mqtt.service');
 const timeoutService = require('../services/timeout.service');
 const mqttConfig = require('../config/mqtt.config');
 
-const TIMEOUT_INTERVAL = 10000;
+const TIMEOUT_INTERVAL = 60000;
 
 // Lấy trạng thái hiện tại của toàn bộ thiết bị
 const getDeviceStatuses = asyncHandler(async (req, res) => {
@@ -19,32 +19,33 @@ const getDeviceStatuses = asyncHandler(async (req, res) => {
 
 });
 
+    /*
+    1. lấy deviceId, action ra khỏi req (params và body)
+    2. validate device trong csdl, validate action qua joi (TURN_ON, TURN_OFF, ...)
+    3. lưu vào bảng action, status = PENDING
+    4. Nếu db lưu thành công, lấy actionId từ dbResult
+    5. gửi response về FE (response cho req post)
 
-    // 1. lấy deviceId, action ra khỏi req (params và body)
-    // 2. validate device trong csdl, validate action qua joi (TURN_ON, TURN_OFF, ...)
-    // 3. lưu vào bảng action, status = PENDING
-    // 4. Nếu db lưu thành công, lấy actionId từ dbResult
-    // 5. gửi response về FE (response cho req post)
-
-    // --- chạy ngầm (timeout-service):
-    // 6. chuẩn bị payload để gửi cho esp32
-    // 7. publish gói tin vào home/room100/devices (actionId, actionName, deviceId, deviceName)
-    // 8. thiết lập timer
-    //     8.1. check bảng action, 
-    //     8.2. nếu tại bản ghi actionId vẫn là status=PENDING
-    //         8.2.1. update bảng action: status=TIMEOUT
-    //         8.2.2. bắn tin qua socket về FE (actionId, actionName, deivceId, err, fallbackStatus)
+    --- chạy ngầm (timeout-service):
+    6. chuẩn bị payload để gửi cho esp32
+    7. publish gói tin vào home/room100/devices (actionId, actionName, deviceId, deviceName)
+    8. thiết lập timer
+        8.1. check bảng action, 
+        8.2. nếu tại bản ghi actionId vẫn là status=PENDING
+            8.2.1. update bảng action: status=TIMEOUT
+            8.2.2. bắn tin qua socket về FE (actionId, actionName, deivceId, err, fallbackStatus)
     
-    // --- chạy ngầm (happy-)
-    // 1. event: nhận được msg ('message')
-    // 2. nếu topic = home/room100/ack
-    // 3. lấy actionId, actionName, deviceId, deviceName, status ra khỏi JSON
-    // 4. validate action trong csdl, validate status (chưa biết qua gì)
-    // 5. Nếu action có status=PENDING
-    //     5.1. update bảng action: status=SUCCESS
-    //     5.2. update bảng device: status=ON/OFF dựa theo actionName 
-    //     (actionName nằm trong dbResult khi validate action)
-    //     5.3. bắn tin qua socket về FE((actionId, actionName, deivceId, status))
+    --- chạy ngầm (happy-)
+    1. event: nhận được msg ('message')
+    2. nếu topic = home/room100/ack
+    3. lấy actionId, actionName, deviceId, deviceName, status ra khỏi JSON
+    4. validate action trong csdl, validate status (chưa biết qua gì)
+    5. Nếu action có status=PENDING
+        5.1. update bảng action: status=SUCCESS
+        5.2. update bảng device: status=ON/OFF dựa theo actionName 
+        (actionName nằm trong dbResult khi validate action)
+        5.3. bắn tin qua socket về FE((actionId, actionName, deivceId, status))
+        */
 
 const controlDevice = asyncHandler(async (req, res) => {
     const { id } = req.params;
@@ -61,6 +62,7 @@ const controlDevice = asyncHandler(async (req, res) => {
         action: action,
         status: 'PENDING'
     });
+
     
     const actionId = newAction.id;
 
@@ -75,10 +77,10 @@ const controlDevice = asyncHandler(async (req, res) => {
     const payloadObj = {
         actionId: actionId,
         deviceId: Number(id),
-        deviceName: device.name,
+        // deviceName: device.name,
         action: action
     };
-    mqttService.publishControl(mqttConfig.topics.device || 'home/room100/devices', payloadObj);
+    mqttService.publishControl(mqttConfig.topics.control || 'home/room100/control', payloadObj);
     
     // 5. Khởi động Timer 10s chạy ngầm
     timeoutService.startActionTimeout(actionId, id, TIMEOUT_INTERVAL);

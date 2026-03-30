@@ -4,6 +4,8 @@
 const mqtt = require('mqtt');
 const mqttConfig = require('../config/mqtt.config');
 const db = require('../models');
+const eventBus = require('../utils/event-bus');
+
 
 class MqttService {
     constructor() {

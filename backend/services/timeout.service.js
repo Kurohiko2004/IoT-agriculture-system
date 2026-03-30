@@ -3,7 +3,7 @@ const db = require('../models');
 
 const activeTimeouts = new Map(); // Sổ tay lưu các bộ đếm đang chạy
 
-const startActionTimeout = (actionId, deviceId, delayMs = 10000) => {
+const startActionTimeout = (actionId, deviceId, delayMs) => {
     const timer = setTimeout(async () => {
         try {
             const record = await db.Action.findByPk(actionId);
@@ -16,7 +16,7 @@ const startActionTimeout = (actionId, deviceId, delayMs = 10000) => {
                 // const io = getIo();
                 // io.emit('device_action_result', { actionId, deviceId, status: 'TIMEOUT' });
 
-                console.log(`[TIMEOUT] Lệnh ${actionId} thất bại sau 10s`);
+                console.log(`[TIMEOUT] Lệnh ${actionId} thất bại sau ${delayMs}ms`);
             }
         } catch (error) {
             console.error(`[LỖI TIMEOUT]`, error);
