@@ -3,19 +3,21 @@ const express = require('express');
 
 const connectDB = require('./config/connectDB')
 const mqttService = require('./services/mqtt.service');
+const http = require('http'); // Thêm dòng này
+const socketService = require('./src/services/socket.service');
 require('./services/action.handler');
+const { cleanupPendingActions } = require('./services/startup.service');
+
 
 const sensorDataRoutes = require('./routers/sensor-data.route')
 const actionRoutes = require('./routers/action.route')
 const deviceRoutes = require('./routers/device.route')
 
-
-const { cleanupPendingActions } = require('./services/startup.service');
-
+const server = http.createServer(app); // Tạo server từ app express
 const app = express();
 const port = process.env.PORT || 8081;
 
-// app.use() cors, express.json(), routes
+socketService.init(server);
 
 app.use(express.json());
 app.use('/api/sensor-data', sensorDataRoutes);

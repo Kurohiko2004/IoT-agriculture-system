@@ -39,12 +39,17 @@ const getDeviceStatuses = asyncHandler(async (req, res) => {
     1. event: nhận được msg ('message')
     2. nếu topic = home/room100/ack
     3. lấy actionId, actionName, deviceId, deviceName, status ra khỏi JSON
-    4. validate action trong csdl, validate status (chưa biết qua gì)
-    5. Nếu action có status=PENDING
-        5.1. update bảng action: status=SUCCESS
-        5.2. update bảng device: status=ON/OFF dựa theo actionName 
-        (actionName nằm trong dbResult khi validate action)
-        5.3. bắn tin qua socket về FE((actionId, actionName, deivceId, status))
+    4. validate payload.actionId trong csdl (record && record.status=PENDING), 
+    validate payload.deviceId (record.deviceId == payload.deviceId); 
+    validate payload.status (chưa biết qua gì). 
+    5. Nếu payload.status=SUCCESS
+            5.1. Thực hiện Transaction: 
+                5.1.1. update bảng action: status=SUCCESS
+                5.1.2. update bảng device: status=ON/OFF dựa theo actionName 
+                (actionName nằm trong dbResult khi validate action)
+            5.2. Hủy timer
+            5.3. Bắn tin qua socket về FE((actionId, actionName, deivceId, status))
+             
         */
 
 const controlDevice = asyncHandler(async (req, res) => {
