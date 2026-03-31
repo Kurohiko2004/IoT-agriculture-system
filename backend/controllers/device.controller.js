@@ -4,7 +4,7 @@ const mqttService = require('../services/mqtt.service');
 const timeoutService = require('../services/timeout.service');
 const mqttConfig = require('../config/mqtt.config');
 
-const TIMEOUT_INTERVAL = 60000;
+const TIMEOUT_INTERVAL = 5000;
 
 // Lấy trạng thái hiện tại của toàn bộ thiết bị
 const getDeviceStatuses = asyncHandler(async (req, res) => {
@@ -85,7 +85,7 @@ const controlDevice = asyncHandler(async (req, res) => {
         // deviceName: device.name,
         action: action
     };
-    mqttService.publishControl(mqttConfig.topics.control || 'home/room100/control', payloadObj);
+    mqttService.publishControl(mqttConfig.topics.control, payloadObj);
     
     // 5. Khởi động Timer 10s chạy ngầm
     timeoutService.startActionTimeout(actionId, id, TIMEOUT_INTERVAL);

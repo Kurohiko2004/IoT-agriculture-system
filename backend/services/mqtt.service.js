@@ -1,5 +1,3 @@
-// nơi lắng nghe gói tin ack (listening)
-
 'use strict';
 const mqtt = require('mqtt');
 const mqttConfig = require('../config/mqtt.config');
@@ -10,7 +8,6 @@ const eventBus = require('../utils/event-bus');
 class MqttService {
     constructor() {
         this.client = null;
-        this.callbacks = {}; // Lưu các hàm callback theo ID để xác nhận
     }
 
     connect() {
@@ -20,32 +17,39 @@ class MqttService {
         // Dùng arrow function để giữ ngữ cảnh 'this'
         this.client.on('connect', () => {
             console.log('MQTT Connected');
-            this.client.subscribe([mqttConfig.topics.data, mqttConfig.topics.ack]);
+            this.client.subscribe([mqttConfig.topics.data, mqttConfig.topics.ack], (err) => {
+                if (!err) {
+                    console.log(`📡 Subscribed to: ${mqttConfig.topics.data} & ${mqttConfig.topics.ack}`);
+                }
+            });
         });
 
         // Dùng arrow function để giữ ngữ cảnh 'this'
         this.client.on('message', async (topic, message) => {
-            const payload = message.toString();
+            // const payload = message.toString();
+            const payloadString = message.toString();
             
             try {
                 if (topic === mqttConfig.topics.data) {
-                    await this.handleSensorData(payload);
+                    await this.handleSensorData(payloadString);
                 } 
-                
                 if (topic === mqttConfig.topics.ack) {
-                    this.handleAck(payload);
+                    this.handleAck(payloadString);
                 }
             } catch (error) {
                 console.error('❌ Error processing MQTT message:', error);
             }
         });
+
+        this.client.on('error', (err) => {
+            console.error('❌ MQTT Connection Error:', err);
+        });
     }
 
     async handleSensorData(payload) {
         let data;
-
         try {
-            data = JSON.parse(payload.toString());
+            data = JSON.parse(payload);
         } catch (err) {
             console.error('❌ JSON Parse Error');
             console.error('Payload:', payload.toString());
@@ -54,7 +58,6 @@ class MqttService {
         }
 
         const records = [];
-
         try {
             if (data.temp !== undefined) {
                 records.push({ value: data.temp, type: 'temperature', sensorId: 1 });
@@ -70,10 +73,7 @@ class MqttService {
                 await db.SensorData.bulkCreate(records);
                 console.log('💾 DB Insert Success');
                 // console.log('💾 DB Insert Success:', records);
-
             }
-            
-
         } catch (err) {
             console.error('❌ Database Error');
             console.error('Records:', records);
@@ -86,10 +86,16 @@ class MqttService {
     handleAck(payload) {
         try {
             const data = JSON.parse(payload);
-            // Gói tin chuẩn ESP32 gửi lên: { actionId, deviceId, status }
             
-            // HÉT LÊN LOA NỘI BỘ, KHÔNG ĐỤNG DATABASE Ở ĐÂY
-            eventBus.emit('MQTT_ACK_RECEIVED', data); 
+            // Kiểm tra cấu trúc gói tin tối thiểu trước khi emit
+            if (data.actionId && data.deviceId) {
+                console.log(`📩 Received ACK for Action: ${data.actionId}`);
+                
+                // Phát tín hiệu để action.handler.js xử lý logic DB & Socket
+                eventBus.emit('MQTT_ACK_RECEIVED', data); 
+            } else {
+                console.warn('⚠️ Gói tin ACK thiếu thông tin:', data);
+            }
             
         } catch (e) {
             console.error('❌ Lỗi xử lý JSON ACK:', e.message);
@@ -98,10 +104,10 @@ class MqttService {
 
     publishControl(topic, payloadObj) {
         if (this.client && this.client.connected) {
-            this.client.publish(topic, JSON.stringify(payloadObj));
-            console.log(`[MQTT PUB] Đã gửi lệnh:`, payloadObj);
+            this.client.publish(topic, JSON.stringify(payloadObj), { qos: 1 });
+            console.log(`[MQTT PUB] Topic: ${topic} - Payload:`, payloadObj);
         } else {
-            console.error('❌ MQTT chưa kết nối!');
+            console.error('❌ MQTT chưa kết nối, không thể gửi lệnh!');
         }
     }
 }

@@ -3,8 +3,8 @@ const express = require('express');
 
 const connectDB = require('./config/connectDB')
 const mqttService = require('./services/mqtt.service');
-const http = require('http'); // Thêm dòng này
-const socketService = require('./src/services/socket.service');
+const http = require('http'); 
+const socketService = require('./services/socket.service');
 require('./services/action.handler');
 const { cleanupPendingActions } = require('./services/startup.service');
 
@@ -13,8 +13,8 @@ const sensorDataRoutes = require('./routers/sensor-data.route')
 const actionRoutes = require('./routers/action.route')
 const deviceRoutes = require('./routers/device.route')
 
-const server = http.createServer(app); // Tạo server từ app express
 const app = express();
+const server = http.createServer(app); // Tạo server từ app express
 const port = process.env.PORT || 8081;
 
 socketService.init(server);
@@ -27,7 +27,7 @@ app.use('/api/devices', deviceRoutes);
 
 connectDB();
 
-app.listen(port, async () => {
+server.listen(port, async () => {
     console.log(` Server đang chạy trên cổng ${port}`);
     mqttService.connect();
     try {

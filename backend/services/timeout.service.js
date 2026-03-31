@@ -1,20 +1,31 @@
 const db = require('../models');
-// const { getIo } = require('./socket.service'); // Bỏ comment khi bạn làm xong WebSocket
+const { emitDeviceUpdate } = require('./socket.service');
 
 const activeTimeouts = new Map(); // Sổ tay lưu các bộ đếm đang chạy
 
 const startActionTimeout = (actionId, deviceId, delayMs) => {
+    // 1. Nếu đã có bộ đếm cũ cho action này (đề phòng bấm nút quá nhanh), hãy dập nó đi
+    if (activeTimeouts.has(actionId)) {
+        clearTimeout(activeTimeouts.get(actionId));
+    }
+
     const timer = setTimeout(async () => {
         try {
+            // 2. Kiểm tra thực tế trong DB xem lệnh có còn treo không
             const record = await db.Action.findByPk(actionId);
 
             if (record && record.status === 'PENDING') {
-                // 1. Phán quyết lỗi
+                // 3. Phán quyết lỗi TIMEOUT vào DB
                 await record.update({ status: 'TIMEOUT' });
 
-                // 2. Bắn thông báo về FE qua WebSocket
-                // const io = getIo();
-                // io.emit('device_action_result', { actionId, deviceId, status: 'TIMEOUT' });
+                // 4. Bắn thông báo về FE qua WebSocket
+                emitDeviceUpdate({ 
+                    actionId: actionId, 
+                    deviceId: deviceId, 
+                    status: 'TIMEOUT',
+                    action: record.action,
+                    message: `Hết thời gian chờ (${delayMs/1000}s), thiết bị không phản hồi!`
+                });
 
                 console.log(`[TIMEOUT] Lệnh ${actionId} thất bại sau ${delayMs}ms`);
             }
