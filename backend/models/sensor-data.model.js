@@ -47,6 +47,28 @@ module.exports = (sequelize, DataTypes) => {
             }]
         });
     }
+
+    static async getLatestSummary() {
+      const latestData = await this.findAll({
+          attributes: ['type', 'value', 'createdAt'],
+          order: [['createdAt', 'DESC']],
+          limit: 30
+      });
+
+      const latestMap = {};
+      latestData.forEach(item => {
+          if (!latestMap[item.type]) {
+              latestMap[item.type] = item.value;
+          }
+      });
+
+      return {
+          temperature: latestMap['temperature'] || 0,
+          humidity: latestMap['humidity'] || 0,
+          lux: latestMap['light'] || 0,
+          lastUpdate: latestData[0]?.createdAt || new Date()
+      };
+  }
   }
 
 
