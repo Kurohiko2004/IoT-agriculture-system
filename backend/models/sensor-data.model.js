@@ -48,27 +48,44 @@ module.exports = (sequelize, DataTypes) => {
         });
     }
 
-    static async getLatestSummary() {
-      const latestData = await this.findAll({
-          attributes: ['type', 'value', 'createdAt'],
-          order: [['createdAt', 'DESC']],
-          limit: 30
-      });
+// models/sensordata.js
 
-      const latestMap = {};
-      latestData.forEach(item => {
-          if (!latestMap[item.type]) {
-              latestMap[item.type] = item.value;
-          }
-      });
+    static async getLatestSensorData() {
+        // 1. Lấy 50 bản ghi gần nhất để vẽ Chart
+        const rawData = await this.findAll({
+            attributes: ['type', 'value', 'createdAt'],
+            order: [['createdAt', 'DESC']],
+            limit: 50
+        });
 
-      return {
-          temperature: latestMap['temperature'] || 0,
-          humidity: latestMap['humidity'] || 0,
-          lux: latestMap['light'] || 0,
-          lastUpdate: latestData[0]?.createdAt || new Date()
-      };
-  }
+        if (!rawData || rawData.length === 0) {
+            return {
+                latest: { temperature: 0, humidity: 0, lux: 0 },
+                history: [],
+                lastUpdate: null
+            };
+        }
+
+        // 2. Logic lọc lấy giá trị mới nhất cho 3 thẻ Cards
+        const latestMap = {};
+        rawData.forEach(item => {
+            if (!latestMap[item.type]) {
+                latestMap[item.type] = item.value;
+            }
+        });
+
+        // 3. Đóng gói dữ liệu trả về
+        return {
+            latest: {
+                temperature: latestMap['temperature'] || 0,
+                humidity: latestMap['humidity'] || 0,
+                lux: latestMap['light'] || 0 // Khớp với type 'light' trong mqtt.service
+            },
+            // Đảo ngược mảng để Chart chạy từ Cũ -> Mới
+            history: [...rawData].reverse(), 
+            lastUpdate: rawData[0].createdAt
+        };
+    }
   }
 
 

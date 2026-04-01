@@ -20,8 +20,9 @@ const getAllSensorData = asyncHandler(async (req, res) => {
 }); 
 
 const getLatestSensorData = asyncHandler(async (req, res) => {
-    const result = await db.SensorData.getLatestSummary();
-    return res.status(200).json(result);
+    const dashboardData = await db.SensorData.getLatestSensorData();
+    
+    return res.status(200).json(dashboardData);
 });
 
 module.exports = { getAllSensorData, getLatestSensorData };
