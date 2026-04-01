@@ -25,7 +25,10 @@ eventBus.on('MQTT_ACK_RECEIVED', async (payload) => {
         const isSuccess = (status === 'SUCCESS');
         const finalActionStatus = isSuccess ? 'SUCCESS' : 'FAILED';
         // 1.2. Cập nhật action.status trong db
-        await record.update({ status: finalActionStatus }, { transaction: t });
+        await record.update(
+            { status: finalActionStatus }, 
+            { transaction: t }
+        );
 
         // 2. Nếu action.status == SUCCESS thì cập nhật device.status (ON/OFF)
         if (isSuccess) {

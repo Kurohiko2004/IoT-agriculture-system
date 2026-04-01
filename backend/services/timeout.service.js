@@ -11,12 +11,15 @@ const startActionTimeout = (actionId, deviceId, delayMs) => {
 
     const timer = setTimeout(async () => {
         try {
-            // 2. Kiểm tra thực tế trong DB xem lệnh có còn treo không
+            // 2. Kiểm tra trong DB xem action.status có còn là PENDING ko
             const record = await db.Action.findByPk(actionId);
 
+            // TODO: refactor, dùng early return để đỡ lồng if nhiều
             if (record && record.status === 'PENDING') {
                 // 3. Phán quyết lỗi TIMEOUT vào DB
-                await record.update({ status: 'TIMEOUT' });
+                await record.update(
+                    { status: 'TIMEOUT' }
+                );
 
                 // 4. Bắn thông báo về FE qua WebSocket
                 emitDeviceUpdate({ 
@@ -27,7 +30,7 @@ const startActionTimeout = (actionId, deviceId, delayMs) => {
                     message: `Hết thời gian chờ (${delayMs/1000}s), thiết bị không phản hồi!`
                 });
 
-                console.log(`[TIMEOUT] Lệnh ${actionId} thất bại sau ${delayMs}ms`);
+                console.log(`[TIMEOUT] Lệnh ${actionId} thất bại sau ${delayMs/1000}s`);
             }
         } catch (error) {
             console.error(`[LỖI TIMEOUT]`, error);
@@ -41,6 +44,7 @@ const startActionTimeout = (actionId, deviceId, delayMs) => {
 
 const clearActionTimeout = (actionId) => {
     if (activeTimeouts.has(actionId)) {
+        // clearTimeout và xóa khỏi map
         clearTimeout(activeTimeouts.get(actionId)); // Dập tắt bộ đếm ngay!
         activeTimeouts.delete(actionId);
         console.log(`[HỦY TIMEOUT] Đã dập bộ đếm cho lệnh ${actionId} vì nhận ACK sớm`);

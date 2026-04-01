@@ -1,8 +1,10 @@
+// tiếp nhận thông tin, điều hướng đến hàm xử lý tương ứng dựa vào topic
 'use strict';
 const mqtt = require('mqtt');
 const mqttConfig = require('../config/mqtt.config');
 const db = require('../models');
 const eventBus = require('../utils/event-bus');
+const { emitSensorData } = require('./socket.service');
 
 
 class MqttService {
@@ -15,6 +17,7 @@ class MqttService {
         this.client = mqtt.connect(url, mqttConfig.options);
 
         // Dùng arrow function để giữ ngữ cảnh 'this'
+        // 1. event kết nối thành công
         this.client.on('connect', () => {
             console.log('MQTT Connected');
             this.client.subscribe([mqttConfig.topics.data, mqttConfig.topics.ack], (err) => {
@@ -24,6 +27,7 @@ class MqttService {
             });
         });
 
+        // 2. event nhận message, gọi hàm xử lý tương ứng với topic 
         // Dùng arrow function để giữ ngữ cảnh 'this'
         this.client.on('message', async (topic, message) => {
             // const payload = message.toString();
@@ -41,6 +45,7 @@ class MqttService {
             }
         });
 
+        // 3. event lỗi
         this.client.on('error', (err) => {
             console.error('❌ MQTT Connection Error:', err);
         });
@@ -70,9 +75,18 @@ class MqttService {
             }
 
             if (records.length > 0) {
+                // 1. Lưu vào Database
                 await db.SensorData.bulkCreate(records);
-                console.log('💾 DB Insert Success');
-                // console.log('💾 DB Insert Success:', records);
+
+                // 2. Bắn qua Socket (Hiển thị thời gian thực)
+                // Gói tin gửi đi nên gọn gàng để FE dễ xử lý
+                emitSensorData({
+                    temperature: data.temp,
+                    humidity: data.humidity,
+                    lux: data.lux,
+                    createdAt: new Date()
+                });
+                console.log(`💾 DB & Socket: Đã xử lý ${records.length} chỉ số cảm biến.`);
             }
         } catch (err) {
             console.error('❌ Database Error');
@@ -87,7 +101,7 @@ class MqttService {
         try {
             const data = JSON.parse(payload);
             
-            // Kiểm tra cấu trúc gói tin tối thiểu trước khi emit
+            // validate deviceId và actionId
             if (data.actionId && data.deviceId) {
                 console.log(`📩 Received ACK for Action: ${data.actionId}`);
                 
@@ -104,6 +118,9 @@ class MqttService {
 
     publishControl(topic, payloadObj) {
         if (this.client && this.client.connected) {
+            // biến object payload thành string theo định dạng JSON để 
+            // gửi đến esp32. Object để dễ code hơn, json string là để 
+            // vận chuyển qua mạng
             this.client.publish(topic, JSON.stringify(payloadObj), { qos: 1 });
             console.log(`[MQTT PUB] Topic: ${topic} - Payload:`, payloadObj);
         } else {

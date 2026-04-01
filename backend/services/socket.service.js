@@ -35,4 +35,10 @@ const emitDeviceUpdate = (data) => {
     }
 };
 
-module.exports = { init, getIo, emitDeviceUpdate };
+const emitSensorData = (data) => {
+    if (io) {
+        io.emit('sensor_data_update', data);
+    }
+};
+
+module.exports = { init, getIo, emitDeviceUpdate, emitSensorData };

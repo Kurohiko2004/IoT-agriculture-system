@@ -56,7 +56,7 @@ const controlDevice = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const { action } = req.body; 
 
-    // 1. Kiểm tra thiết bị có tồn tại
+    // 1. validate device trong db
     const device = await db.Device.findByPk(id);
     if (!device) return res.status(404).json({ message: 'Thiết bị không tồn tại' });
 
@@ -67,7 +67,6 @@ const controlDevice = asyncHandler(async (req, res) => {
         action: action,
         status: 'PENDING'
     });
-
     
     const actionId = newAction.id;
 
@@ -78,7 +77,7 @@ const controlDevice = asyncHandler(async (req, res) => {
         message: "Lệnh đang được gửi đi..."
     });
 
-    // 4. Bắn lệnh xuống Mạch ESP32
+    // 4. Publish vào topic control, gửi đến esp32
     const payloadObj = {
         actionId: actionId,
         deviceId: Number(id),
@@ -87,7 +86,7 @@ const controlDevice = asyncHandler(async (req, res) => {
     };
     mqttService.publishControl(mqttConfig.topics.control, payloadObj);
     
-    // 5. Khởi động Timer 10s chạy ngầm
+    // 5. Khởi động Timer 5s chạy ngầm
     timeoutService.startActionTimeout(actionId, id, TIMEOUT_INTERVAL);
 });
 
