@@ -28,22 +28,31 @@ module.exports = (sequelize, DataTypes) => {
 
         if (search) {
             whereConditions[Op.or] = [
-                // 1. action LIKE '%search%'
+
+                // action
                 { action: { [Op.like]: `%${search}%` } },
 
-                // 2. status LIKE '%search%'
+                // status
                 { status: { [Op.like]: `%${search}%` } },
 
-                // 3. CAST(interactedAt AS CHAR) LIKE '%search%'
+                // interactedAt (convert UTC → VN time)
                 sequelize.where(
-                    sequelize.cast(sequelize.col('interactedAt'), 'CHAR'),
+                    sequelize.fn(
+                        'CONVERT_TZ',
+                        sequelize.col('interactedAt'),
+                        '+00:00',
+                        '+07:00'
+                    ),
                     { [Op.like]: `%${search}%` }
                 ),
 
-                // 4.
+                // device name
                 { '$device.name$': { [Op.like]: `%${search}%` } }
             ];
         }
+
+        console.log(JSON.stringify(whereConditions, null, 2))
+        console.log('search received:', JSON.stringify(search))
 
         return await this.findAndCountAll({
             where: whereConditions,

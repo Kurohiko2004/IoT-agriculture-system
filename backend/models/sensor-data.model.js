@@ -23,6 +23,8 @@ module.exports = (sequelize, DataTypes) => {
      */
     static async findAllData({ limit, offset, type, search, sortBy, sortOrder }) {
         const whereConditions = {};
+        
+        console.log(search)
 
         if (type) whereConditions.type = type;
 
@@ -30,8 +32,13 @@ module.exports = (sequelize, DataTypes) => {
             whereConditions[Op.or] = [
                 { type: { [Op.like]: `%${search}%` } },
                 sequelize.where(
-                    sequelize.cast(sequelize.col('measuredAt'), 'CHAR'),
-                    { [Op.like]: `%${search}%` }
+                  sequelize.fn(
+                    'CONVERT_TZ',
+                    sequelize.col('measuredAt'),
+                    '+00:00',
+                    '+07:00'
+                  ),
+                  { [Op.like]: `%${search}%` }
                 )
             ];
         }
@@ -53,8 +60,8 @@ module.exports = (sequelize, DataTypes) => {
     static async getLatestSensorData() {
         // 1. Lấy 50 bản ghi gần nhất để vẽ Chart
         const rawData = await this.findAll({
-            attributes: ['type', 'value', 'createdAt'],
-            order: [['createdAt', 'DESC']],
+            attributes: ['type', 'value', 'measuredAt'],
+            order: [['measuredAt', 'DESC']],
             limit: 50
         });
 
@@ -83,7 +90,7 @@ module.exports = (sequelize, DataTypes) => {
             },
             // Đảo ngược mảng để Chart chạy từ Cũ -> Mới
             history: [...rawData].reverse(), 
-            lastUpdate: rawData[0].createdAt
+            lastUpdate: rawData[0].measuredAt
         };
     }
   }

@@ -52,6 +52,7 @@ eventBus.on('MQTT_ACK_RECEIVED', async (payload) => {
             deviceId: deviceId,
             status: finalActionStatus,
             action: record.action,
+            deviceStatus: isSuccess ? (record.action === 'TURN_ON' ? 'ON' : 'OFF') : null,
             message: isSuccess ? 'Thực hiện lệnh thành công' : 'Thiết bị phản hồi lỗi'
         });
 

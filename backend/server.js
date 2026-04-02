@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const cors = require('cors');
 
 const connectDB = require('./config/connectDB')
 const mqttService = require('./services/mqtt.service');
@@ -19,7 +20,13 @@ const port = process.env.PORT || 8081;
 
 socketService.init(server);
 
+app.use(cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true  // nếu dùng cookie/session
+}));
 app.use(express.json());
+
 app.use('/api/sensor-data', sensorDataRoutes);
 app.use('/api/actions', actionRoutes);
 app.use('/api/devices', deviceRoutes);
