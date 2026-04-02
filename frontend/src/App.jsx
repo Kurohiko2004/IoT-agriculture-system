@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
 import { ROUTES } from './config/constants'
+import { Toaster } from 'react-hot-toast'
 
 import SensorDataPage from './pages/SensorDataPage'
 import ActionHistoryPage from './pages/ActionHistoryPage'
@@ -12,6 +13,7 @@ import ProfilePage from './pages/ProfilePage'
 export default function App() {
   return (
     <div className="min-h-screen bg-gray-100">
+      <Toaster position="top-right" />
       <Navbar />
       <main className="max-w-7xl mx-auto px-6 py-6">
         <Routes>

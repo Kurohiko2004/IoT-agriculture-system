@@ -59,7 +59,7 @@ export default function FilterBar({
             onChange={e => onLimitChange(Number(e.target.value))}
             className="text-sm border border-gray-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-gray-300"
           >
-            {[5, 10, 20, 50].map(n => (
+            {[5, 10, 20].map(n => (
               <option key={n} value={n}>{n}</option>
             ))}
           </select>

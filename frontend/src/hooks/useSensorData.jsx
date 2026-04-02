@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query'
 import { API_BASE_URL } from '../config/constants'
 
 export function useSensorData({ search, type, sortOrder, limit, page }) {
-  const offset = (page - 1) * limit
 
   return useQuery({
     queryKey: ['sensor-data', search, type, sortOrder, limit, page],
@@ -12,9 +11,10 @@ export function useSensorData({ search, type, sortOrder, limit, page }) {
         ...(type      && { type }),
         sortBy: 'measuredAt',
         sortOrder,
-        limit,
-        offset,
+        items: limit,
+        page
       })
+
       const res = await fetch(`${API_BASE_URL}/sensor-data?${params}`)
       if (!res.ok) throw new Error('Failed to fetch sensor data')
       return res.json()

@@ -1,6 +1,7 @@
 import { Thermometer, Droplets, Sprout, Sun } from 'lucide-react'
 
-export const API_BASE_URL = 'http://localhost:3000/api'
+export const API_BASE_URL = 'http://localhost:8081/api'
+export const SOCKET_URL   = 'http://localhost:8081'
 
 export const SENSOR_CONFIG = {
   temperature: {
@@ -46,8 +47,8 @@ export const DEVICE_NAMES = [
 ]
 
 export const ROUTES = {
-  DASHBOARD: '/',
-  SENSOR_DATA: '/sensor-data',
+  DASHBOARD:      '/',
+  SENSOR_DATA:    '/sensor-data',
   ACTION_HISTORY: '/action-history',
-  PROFILE: '/profile',
+  PROFILE:        '/profile',
 }

@@ -35,9 +35,9 @@ export default function SensorDataPage() {
     search, type, sortOrder, limit, page,
   })
 
-  const rows       = data?.rows  ?? []
-  const totalCount = data?.count ?? 0
-  const totalPages = Math.ceil(totalCount / limit) || 1
+  const rows       = data?.data         ?? []
+  const totalCount = data?.pagination?.totalItems ?? 0
+  const totalPages = data?.pagination?.totalPages ?? 1
 
   // Reset to page 1 whenever filters change
   function handleFilterChange(setter) {
@@ -57,7 +57,7 @@ export default function SensorDataPage() {
       )
     }
     if (colKey === 'measuredAt') {
-      return dayjs(row.measuredAt).format('MMM DD, YYYY - HH:mm:ss')
+      return dayjs(row.measuredAt).format('YYYY-MM-DD HH:mm:ss')
     }
   }
 

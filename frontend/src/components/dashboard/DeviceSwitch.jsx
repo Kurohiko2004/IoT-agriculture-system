@@ -1,30 +1,33 @@
-import { useState } from 'react'
 import { API_BASE_URL } from '../../config/constants'
 import { useDeviceStore } from '../../store/deviceStore'
 
 export default function DeviceSwitch({ device }) {
-  const { devices, setDeviceStatus } = useDeviceStore()
-  const status = devices[device.id] ?? device.status
-  const isPending = status === 'PENDING'
-  const isOn      = status === 'ON'
+  const { devices, setDevicePending } = useDeviceStore()
+
+  const deviceState = devices[device.id]
+  const status      = deviceState?.status ?? device.status
+  const isPending   = status === 'PENDING'
+  const isOn        = status === 'ON'
 
   const Icon = device.icon
 
   async function handleToggle() {
     if (isPending) return
-    const action = isOn ? 'OFF' : 'ON'
-    setDeviceStatus(device.id, 'PENDING')
+    const action = isOn ? 'TURN_OFF' : 'TURN_ON'
+
     try {
-      const res = await fetch(`${API_BASE_URL}/action`, {
-        method: 'POST',
+      const res = await fetch(`${API_BASE_URL}/devices/${device.id}/action`, {
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceId: device.id, action }),
+        body:    JSON.stringify({ action }),
       })
       if (!res.ok) throw new Error()
       const data = await res.json()
-      setDeviceStatus(device.id, data.status ?? action)
+      // Save actionId — socket will resolve the final status
+      setDevicePending(device.id, data.actionId)
     } catch {
-      setDeviceStatus(device.id, isOn ? 'ON' : 'OFF')
+      // REST itself failed — no actionId, nothing to wait for
+      console.error('Failed to send action')
     }
   }
 
@@ -38,14 +41,17 @@ export default function DeviceSwitch({ device }) {
         </div>
       </div>
 
-      {/* Toggle */}
       <button
         onClick={handleToggle}
         disabled={isPending}
         className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none
-          ${isPending ? 'bg-amber-400 animate-pulse' : isOn ? 'bg-blue-500' : 'bg-gray-300'}`}
+          ${isPending
+            ? 'bg-amber-400 animate-pulse cursor-not-allowed'
+            : isOn ? 'bg-blue-500' : 'bg-gray-300'
+          }`}
       >
-        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200
+        <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow
+          transition-transform duration-200
           ${isOn || isPending ? 'translate-x-5' : 'translate-x-0'}`}
         />
       </button>

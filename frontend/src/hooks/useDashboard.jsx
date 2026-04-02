@@ -8,8 +8,8 @@ export function useLatestSensorData() {
       const res = await fetch(`${API_BASE_URL}/sensor-data/latest`)
       if (!res.ok) throw new Error('Failed to fetch latest sensor data')
       return res.json()
+      // returns { latest: { temperature, humidity, lux }, history: [], lastUpdate }
     },
-    refetchInterval: 5000,
   })
 }
 
@@ -17,9 +17,10 @@ export function useDevices() {
   return useQuery({
     queryKey: ['devices'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE_URL}/devices`)
+      const res = await fetch(`${API_BASE_URL}/devices/status`)
       if (!res.ok) throw new Error('Failed to fetch devices')
-      return res.json()
+      const json = await res.json()
+      return json.data  // unwrap here
     },
   })
 }
