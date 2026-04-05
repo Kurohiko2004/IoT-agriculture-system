@@ -6,7 +6,7 @@ import { SENSOR_CONFIG } from '../config/constants'
 import dayjs from 'dayjs'
 
 const columns = [
-  { key: 'id',          label: 'SENSOR ID' },
+  { key: 'id',          label: 'ID' },
   { key: 'sensor.name', label: 'SENSOR NAME' },
   { key: 'value',       label: 'VALUE' },
   { key: 'measuredAt',  label: 'TIMESTAMP' },
@@ -21,7 +21,7 @@ const valueColorMap = {
   temperature: 'text-red-500 font-bold',
   humidity:    'text-blue-500 font-bold',
   light:       'text-amber-500 font-bold',
-  soil:        'text-green-500 font-bold',
+  moisture:        'text-green-500 font-bold',
 }
 
 export default function SensorDataPage() {
@@ -45,7 +45,7 @@ export default function SensorDataPage() {
   }
 
   function cellRenderer(colKey, row) {
-    if (colKey === 'sensor.name') return row.sensor?.name
+    if (colKey === 'sensor.name') return row.type
     if (colKey === 'value') {
       return (
         <span className={valueColorMap[row.type] ?? 'text-gray-700'}>

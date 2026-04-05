@@ -20,7 +20,7 @@ export const SENSOR_CONFIG = {
     threshold: 40,
     chartColor: '#3b82f6',
   },
-  soil: {
+  moisture: {
     label: 'Soil Moisture',
     unit: '%',
     icon: Sprout,

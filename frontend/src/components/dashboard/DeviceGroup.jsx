@@ -15,11 +15,11 @@ export default function DeviceGroup({ title, color, devices }) {
       <p className={`text-xs font-bold tracking-widest uppercase mb-2 ${style.label}`}>
         {title}
       </p>
-      <div className="bg-white rounded-lg px-4 divide-y divide-gray-100">
-        {devices.map(device => (
-          <DeviceSwitch key={device.id} device={device} />
-        ))}
-      </div>
+        <div className="bg-white rounded-lg px-4 divide-y divide-gray-100">
+            {devices.map(device => (
+                <DeviceSwitch key={device.id} device={device} color={color} />
+            ))}
+        </div>
     </div>
   )
 }

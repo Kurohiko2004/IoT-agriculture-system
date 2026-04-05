@@ -3,11 +3,12 @@ import { useDeviceStore } from '../store/deviceStore'
 import { useLatestSensorData, useDevices } from '../hooks/useDashboard'
 import SensorCard from '../components/dashboard/SensorCard'
 import ControlPanel from '../components/dashboard/ControlPanel'
-import { SENSOR_CONFIG, SOCKET_URL } from '../config/constants'
 import { Fan, Droplets, Wind, Waves, Lightbulb } from 'lucide-react'
 import { io } from 'socket.io-client'
 import toast from 'react-hot-toast'
 import dayjs from 'dayjs'
+
+import { SENSOR_CONFIG, SOCKET_URL } from '../config/constants'
 
 const deviceIconMap = {
   'cooling fan':     Fan,
@@ -21,7 +22,7 @@ const deviceTypeMap = {
   'cooling fan':     'temperature',
   'misting system':  'humidity',
   'ventilation fan': 'humidity',
-  'water pump':      'soil',
+  'water pump':      'moisture', // Updated from 'soil' to 'moisture' to match SENSOR_CONFIG
   'light':           'light',
 }
 
@@ -38,41 +39,55 @@ export default function DashboardPage() {
   const { data: sensorData, isLoading: loadingSensors } = useLatestSensorData()
   const { data: devicesData, isLoading: loadingDevices } = useDevices()
 
-  // Local state for live card values and chart history
-  const [liveValues, setLiveValues]   = useState(null)
-  const [chartHistory, setChartHistory] = useState([])
+  // Combined state to avoid cascading renders
+  const [dashboardData, setDashboardData] = useState({
+    liveValues: null,
+    chartHistory: { temperature: [], humidity: [], moisture: [], light: [] }
+  })
 
   // Seed initial values from REST
   useEffect(() => {
     if (!sensorData) return
-    setLiveValues(sensorData.latest)
-    setChartHistory(sensorData.history ?? [])
+
+    const grouped = { temperature: [], humidity: [], moisture: [], light: [] }
+    for (const point of sensorData.history ?? []) {
+      if (grouped[point.type]) {
+        grouped[point.type].push({
+          value: point.value,
+          measuredAt: point.measuredAt ?? point.createdAt,
+        })
+      }
+    }
+
+    setDashboardData({
+      liveValues: sensorData.latest,
+      chartHistory: grouped,
+    })
   }, [sensorData])
 
   // Seed device statuses into Zustand
   useEffect(() => {
     if (!devicesData) return
     initDevices(devicesData)
-  }, [devicesData])
+  }, [devicesData, initDevices])
 
   // Socket.io
   useEffect(() => {
     const socket = io(SOCKET_URL)
 
-    // Sensor update — update cards + append to chart
+    // Sensor update — update cards + append to chart in one state change
     socket.on('sensor_data_update', (payload) => {
-      const { temperature, humidity, lux, createdAt } = payload
+      const { temperature, humidity, lux, moisture, createdAt } = payload
 
-      setLiveValues({ temperature, humidity, lux })
-
-      setChartHistory(prev => {
-        const newPoints = [
-          { type: 'temperature', value: temperature, measuredAt: createdAt },
-          { type: 'humidity',    value: humidity,    measuredAt: createdAt },
-          { type: 'light',       value: lux,         measuredAt: createdAt },
-        ]
-        return [...prev, ...newPoints].slice(-60) // keep last 60 raw points
-      })
+      setDashboardData(prev => ({
+        liveValues: { temperature, humidity, lux, moisture },
+        chartHistory: {
+          temperature: [...prev.chartHistory.temperature, { value: temperature, measuredAt: createdAt }].slice(-20),
+          humidity:    [...prev.chartHistory.humidity,    { value: humidity,    measuredAt: createdAt }].slice(-20),
+          moisture:    [...prev.chartHistory.moisture,    { value: moisture,    measuredAt: createdAt }].slice(-20),
+          light:       [...prev.chartHistory.light,       { value: lux,         measuredAt: createdAt }].slice(-20),
+        }
+      }))
     })
 
     // Device update — resolve or fail the pending switch
@@ -96,51 +111,47 @@ export default function DashboardPage() {
 
   // Build per-type chart data from history
   function getChartData(type) {
-    return chartHistory
-      .filter(d => d.type === type)
-      .slice(-20)
-      .map(d => ({
-        value: d.value,
-        time:  dayjs(d.measuredAt).format('HH:mm:ss'),
-      }))
+    return (dashboardData.chartHistory[type] ?? []).map(d => ({
+      value: d.value,
+      time:  dayjs(d.measuredAt).format('HH:mm:ss'),
+    }))
   }
 
   // Build sensor cards from liveValues
   const sensorCards = [
-    { type: 'temperature', value: liveValues?.temperature ?? '--' },
-    { type: 'humidity',    value: liveValues?.humidity    ?? '--' },
-    { type: 'light',       value: liveValues?.lux         ?? '--' },
+    { type: 'temperature', value: dashboardData.liveValues?.temperature ?? '--' },
+    { type: 'humidity',    value: dashboardData.liveValues?.humidity    ?? '--' },
+    { type: 'moisture',    value: dashboardData.liveValues?.moisture    ?? '--' },
+    { type: 'light',       value: dashboardData.liveValues?.lux         ?? '--' },
   ]
-
-  console.log(devicesData)
 
   // Group devices for ControlPanel
   const deviceGroups = Object.keys(SENSOR_CONFIG).map(type => ({
     type,
     devices: (devicesData ?? [])
-      .filter(d => deviceTypeMap[d.name?.toLowerCase()] === type)
-      .map(d => ({
-        ...d,
-        icon:        deviceIconMap[d.name?.toLowerCase()],
-        description: deviceDescriptions[d.name?.toLowerCase()] ?? '',
-      })),
+        .filter(d => deviceTypeMap[d.name?.toLowerCase()] === type)
+        .map(d => ({
+          ...d,
+          icon:        deviceIconMap[d.name?.toLowerCase()],
+          description: deviceDescriptions[d.name?.toLowerCase()] ?? '',
+        })),
   })).filter(g => g.devices.length > 0)
 
   return (
-    <div className="grid grid-cols-3 gap-6">
-      <div className="col-span-2 flex flex-col gap-4">
-        {sensorCards.map(({ type, value }) => (
-          <SensorCard
-            key={type}
-            type={type}
-            value={value}
-            data={getChartData(type)}
-          />
-        ))}
+      <div className="grid grid-cols-3 gap-6">
+        <div className="col-span-2 flex flex-col gap-4">
+          {sensorCards.map(({ type, value }) => (
+              <SensorCard
+                  key={type}
+                  type={type}
+                  value={value}
+                  data={getChartData(type)}
+              />
+          ))}
+        </div>
+        <div className="col-span-1">
+          <ControlPanel deviceGroups={deviceGroups} />
+        </div>
       </div>
-      <div className="col-span-1">
-        <ControlPanel deviceGroups={deviceGroups} />
-      </div>
-    </div>
   )
 }

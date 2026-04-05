@@ -6,11 +6,11 @@ import StatusBadge from '../components/shared/StatusBadge'
 import dayjs from 'dayjs'
 
 const columns = [
-  { key: 'deviceId',     label: 'DEVICE ID' },
-  { key: 'device.name',  labelf: 'DEVICE' },
+  { key: 'id',           label: 'ID' },
+  { key: 'device.name',  label: 'DEVICE NAME' },
   { key: 'action',       label: 'ACTION' },
   { key: 'status',       label: 'STATUS' },
-  { key: 'interactedAt', label: 'TIMESTAMP' },
+  { key: 'interactedAt', label: 'INTERACTED TIME' },
 ]
 
 const statusOptions = [
@@ -20,24 +20,26 @@ const statusOptions = [
 ]
 
 export default function ActionHistoryPage() {
-  const [search, setSearch] = useState('')
-  const [status, setStatus] = useState('')
-  const [limit,  setLimit]  = useState(5)
-  const [page,   setPage]   = useState(1)
+  const [search,    setSearch]    = useState('')
+  const [status,    setStatus]    = useState('')
+  const [sortOrder, setSortOrder] = useState('DESC')
+  const [limit,     setLimit]     = useState(10)
+  const [page,      setPage]      = useState(1)
 
   const { data, isLoading, isError } = useActionHistory({
-    search, status, limit, page,
+    search, status, sortOrder, limit, page,
   })
 
-  console.log(data)
-
-  // ✅ Sửa lại đúng với structure API trả về
   const rows       = data?.data         ?? []
   const totalCount = data?.pagination?.totalItems ?? 0
   const totalPages = data?.pagination?.totalPages ?? 1
 
+
+  //TODO: refactor these 2 functions to shared logic
   function handleFilterChange(setter) {
-    return (val) => { setter(val); setPage(1) }
+    return (val) => {
+      setter(val);
+      setPage(1) }
   }
 
   function cellRenderer(colKey, row) {
@@ -55,7 +57,8 @@ export default function ActionHistoryPage() {
         typeLabel="Status"
         typeOptions={statusOptions}
         typeValue={status}      onTypeChange={handleFilterChange(setStatus)}
-        showSort={false}
+        showSort
+        sortValue={sortOrder}   onSortChange={handleFilterChange(setSortOrder)}
         limitValue={limit}      onLimitChange={handleFilterChange(setLimit)}
       />
 

@@ -15,10 +15,12 @@ export function useSensorData({ search, type, sortOrder, limit, page }) {
         page
       })
 
+
+
       const res = await fetch(`${API_BASE_URL}/sensor-data?${params}`)
       if (!res.ok) throw new Error('Failed to fetch sensor data')
       return res.json()
     },
-    keepPreviousData: true,
+    keepPreviousData: false,
   })
 }
