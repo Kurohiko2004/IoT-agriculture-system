@@ -23,117 +23,8 @@ const Dashboard = () => {
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [notifications, setNotifications] = useState([]);
 
-  // ==================== INITIALIZE ====================
-  
-  useEffect(() => {
-    // Fetch initial data from REST API
-    fetchInitialData();
-    
-    // Connect to WebSocket
-    connectWebSocket();
-    
-    // Cleanup on unmount
-    return () => {
-      websocketService.disconnect();
-    };
-  }, []);
+  // ==================== HELPER FUNCTIONS ====================
 
-  const fetchInitialData = async () => {
-    try {
-      const response = await axios.get('http://localhost:3000/api/dashboard');
-      
-      // Process sensor data
-      response.data.sensors.forEach(sensor => {
-        updateSensorValue(sensor.sensor_name, sensor.value);
-      });
-      
-      // Process device status
-      response.data.devices.forEach(device => {
-        updateDeviceStatus(device.name, device.current_status === 'on');
-      });
-      
-    } catch (error) {
-      console.error('Error fetching initial data:', error);
-      addNotification('error', 'Failed to load dashboard data');
-    }
-  };
-
-  const connectWebSocket = async () => {
-    try {
-      setConnectionStatus('connecting');
-      
-      await websocketService.connect('ws://localhost:3000');
-      
-      setConnectionStatus('connected');
-      addNotification('success', 'Real-time connection established');
-      
-      // Subscribe to WebSocket events
-      setupWebSocketListeners();
-      
-    } catch (error) {
-      console.error('WebSocket connection error:', error);
-      setConnectionStatus('error');
-      addNotification('error', 'Connection failed');
-    }
-  };
-
-  // ==================== WEBSOCKET LISTENERS ====================
-  
-  const setupWebSocketListeners = () => {
-    
-    // Listen for sensor updates
-    websocketService.on('sensor_update', (data) => {
-      console.log('🌡️ Sensor update:', data);
-      updateSensorValue(data.sensor, data.value);
-      addNotification('info', `${data.sensor} updated: ${data.value}`);
-    });
-    
-    // Listen for device status changes
-    websocketService.on('device_status', (data) => {
-      console.log('💡 Device status:', data);
-      updateDeviceStatus(data.device, data.status === 'on');
-      
-      if (data.success) {
-        addNotification('success', `${data.device} turned ${data.status}`);
-      }
-    });
-    
-    // Listen for device errors
-    websocketService.on('device_error', (data) => {
-      console.log('❌ Device error:', data);
-      updateDeviceStatus(data.device, false);
-      addNotification('error', `${data.device}: ${data.error}`);
-    });
-    
-    // Listen for device sync
-    websocketService.on('device_sync', (data) => {
-      console.log('🔄 Device sync:', data);
-      
-      Object.entries(data.states).forEach(([device, status]) => {
-        if (device !== 'event') {
-          updateDeviceStatus(device, status === 'on');
-        }
-      });
-      
-      addNotification('warning', data.message);
-    });
-    
-    // Listen for initial data
-    websocketService.on('initial_data', (data) => {
-      console.log('📊 Initial data received:', data);
-      
-      data.data.sensors.forEach(sensor => {
-        updateSensorValue(sensor.sensor_name, sensor.value);
-      });
-      
-      data.data.devices.forEach(device => {
-        updateDeviceStatus(device.name, device.current_status === 'on');
-      });
-    });
-  };
-
-  // ==================== UPDATE FUNCTIONS ====================
-  
   const updateSensorValue = (sensorName, value) => {
     const sensorMap = {
       'temperature': 'temperature',
@@ -189,8 +80,97 @@ const Dashboard = () => {
     }, 5000);
   };
 
-  // ==================== CONTROL FUNCTIONS ====================
-  
+  const setupWebSocketListeners = () => {
+    // Listen for sensor updates
+    websocketService.on('sensor_update', (data) => {
+      console.log('🌡️ Sensor update:', data);
+      updateSensorValue(data.sensor, data.value);
+      addNotification('info', `${data.sensor} updated: ${data.value}`);
+    });
+    
+    // Listen for device status changes
+    websocketService.on('device_status', (data) => {
+      console.log('💡 Device status:', data);
+      updateDeviceStatus(data.device, data.status === 'on');
+      
+      if (data.success) {
+        addNotification('success', `${data.device} turned ${data.status}`);
+      }
+    });
+    
+    // Listen for device errors
+    websocketService.on('device_error', (data) => {
+      console.log('❌ Device error:', data);
+      updateDeviceStatus(data.device, false);
+      addNotification('error', `${data.device}: ${data.error}`);
+    });
+    
+    // Listen for device sync
+    websocketService.on('device_sync', (data) => {
+      console.log('🔄 Device sync:', data);
+      
+      Object.entries(data.states).forEach(([device, status]) => {
+        if (device !== 'event') {
+          updateDeviceStatus(device, status === 'on');
+        }
+      });
+      
+      addNotification('warning', data.message);
+    });
+    
+    // Listen for initial data
+    websocketService.on('initial_data', (data) => {
+      console.log('📊 Initial data received:', data);
+      
+      data.data.sensors.forEach(sensor => {
+        updateSensorValue(sensor.sensor_name, sensor.value);
+      });
+      
+      data.data.devices.forEach(device => {
+        updateDeviceStatus(device.name, device.current_status === 'on');
+      });
+    });
+  };
+
+  const fetchInitialData = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/api/dashboard');
+      
+      // Process sensor data
+      response.data.sensors.forEach(sensor => {
+        updateSensorValue(sensor.sensor_name, sensor.value);
+      });
+      
+      // Process device status
+      response.data.devices.forEach(device => {
+        updateDeviceStatus(device.name, device.current_status === 'on');
+      });
+      
+    } catch (error) {
+      console.error('Error fetching initial data:', error);
+      addNotification('error', 'Failed to load dashboard data');
+    }
+  };
+
+  const connectWebSocket = async () => {
+    try {
+      setConnectionStatus('connecting');
+      
+      await websocketService.connect('ws://localhost:3000');
+      
+      setConnectionStatus('connected');
+      addNotification('success', 'Real-time connection established');
+      
+      // Subscribe to WebSocket events
+      setupWebSocketListeners();
+      
+    } catch (error) {
+      console.error('WebSocket connection error:', error);
+      setConnectionStatus('error');
+      addNotification('error', 'Connection failed');
+    }
+  };
+
   const handleDeviceToggle = async (deviceName, deviceId) => {
     const currentStatus = devices[deviceName];
     const action = currentStatus ? 'turn_off' : 'turn_on';
@@ -217,6 +197,21 @@ const Dashboard = () => {
       addNotification('error', 'Failed to control device');
     }
   };
+
+  // ==================== INITIALIZE ====================
+  
+  useEffect(() => {
+    // Fetch initial data from REST API
+    fetchInitialData();
+    
+    // Connect to WebSocket
+    connectWebSocket();
+    
+    // Cleanup on unmount
+    return () => {
+      websocketService.disconnect();
+    };
+  }, []);
 
   // ==================== RENDER ====================
   
