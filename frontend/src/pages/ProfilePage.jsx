@@ -14,11 +14,13 @@ const user = {
 const projects = [
   {
     label: 'IoT Project Report:',
-    url:   '',
+    url:   'https://docs.google.com/document/d/1F7LzBfBn3crr_0gjnN5M0dfY3SmUyMfgwxlUZx6ZV3Y/edit?tab=t.0#heading=h.sz7rmkyndus0',
+    display: 'https://docs.google.com/document/d/1F7LzBfBn3crr_0gjnN5M0dfY3SmUyMfgwxlUZx6ZV3Y/edit?tab=t.0#heading=h.sz7rmkyndus0'
   },
   {
     label: 'API docs:',
-    url:   '',
+    url:   'https://kurohiko2004.github.io/IoT-agriculture-system/',
+    display:   'https://kurohiko2004.github.io/IoT-agriculture-system/',
   },
   {
     label: 'GitHub:',

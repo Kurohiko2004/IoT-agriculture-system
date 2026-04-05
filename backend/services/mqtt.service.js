@@ -73,6 +73,9 @@ class MqttService {
             if (data.lux !== undefined) {
                 records.push({ value: data.lux, type: 'light', sensorId: 2 });
             }
+            if (data.moisture !== undefined) {
+                records.push({ value: data.moisture, type: 'moisture', sensorId: 3 }); // Giả sử ID sensor mới là 4
+            }
 
             if (records.length > 0) {
                 // 1. Lưu vào Database
@@ -84,9 +87,10 @@ class MqttService {
                     temperature: data.temp,
                     humidity: data.humidity,
                     lux: data.lux,
+                    moisture: data.moisture,
                     createdAt: new Date()
                 });
-                console.log(`💾 DB & Socket: Đã xử lý ${records.length} chỉ số cảm biến.`);
+                // console.log(`💾 DB & Socket: Đã xử lý ${records.length} chỉ số cảm biến.`);
             }
         } catch (err) {
             console.error('❌ Database Error');
