@@ -86,7 +86,8 @@ module.exports = (sequelize, DataTypes) => {
             latest: {
                 temperature: latestMap['temperature'] || 0,
                 humidity: latestMap['humidity'] || 0,
-                lux: latestMap['light'] || 0 // Khớp với type 'light' trong mqtt.service
+                lux: latestMap['light'] || 0,
+                moisture: latestMap['moisture'] || 0
             },
             // Đảo ngược mảng để Chart chạy từ Cũ -> Mới
             history: [...rawData].reverse(), 
