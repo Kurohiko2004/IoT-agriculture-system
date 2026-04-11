@@ -1,51 +1,61 @@
 import { create } from 'zustand'
 
-export const useDeviceStore = create((set, get) => ({
+export const useDeviceStore = create((set) => ({
   devices: {},
 
-  // Called right after POST — saves actionId and sets loading
-  setDevicePending: (deviceId, actionId) =>
-    set((state) => ({
-      devices: {
-        ...state.devices,
-        [deviceId]: {
-          ...state.devices[deviceId],
-          status:    'PENDING',
-          actionId,
-        },
-      },
+  initDevices: (deviceList) =>
+    set(() => ({
+      devices: Object.fromEntries(
+        deviceList.map(d => [
+          d.id,
+          { status: d.status, actionId: null, prevStatus: d.status }
+        ])
+      ),
     })),
 
-  // Called on SUCCESS socket event — resolves by actionId
+  setDevicePending: (deviceId, actionId) =>
+    set((state) => {
+      const current = state.devices[deviceId]
+      return {
+        devices: {
+          ...state.devices,
+          [deviceId]: {
+            ...current,
+            prevStatus: current?.status ?? 'OFF', // lưu trạng thái CŨ trước khi PENDING
+            status: 'PENDING',
+            actionId,
+          },
+        },
+      }
+    }),
+
   resolveDevice: (actionId, deviceStatus) =>
     set((state) => {
       const updated = { ...state.devices }
       for (const deviceId in updated) {
         if (updated[deviceId].actionId === actionId) {
-          updated[deviceId] = { status: deviceStatus, actionId: null }
+          updated[deviceId] = {
+            status: deviceStatus,
+            actionId: null,
+            prevStatus: deviceStatus,
+          }
         }
       }
       return { devices: updated }
     }),
 
-  // Called on FAILED/TIMEOUT socket event — rolls back by actionId
   failDevice: (actionId) =>
     set((state) => {
       const updated = { ...state.devices }
       for (const deviceId in updated) {
         if (updated[deviceId].actionId === actionId) {
-          const prev = updated[deviceId].prevStatus ?? 'OFF'
-          updated[deviceId] = { status: prev, actionId: null }
+          updated[deviceId] = {
+            status: updated[deviceId].prevStatus ?? 'OFF', // rollback về trạng thái CŨ
+            actionId: null,
+            prevStatus: updated[deviceId].prevStatus ?? 'OFF',
+          }
         }
       }
       return { devices: updated }
     }),
-
-  // Seed initial device statuses from GET /devices/status
-  initDevices: (deviceList) =>
-    set(() => ({
-      devices: Object.fromEntries(
-        deviceList.map(d => [d.id, { status: d.status, actionId: null, prevStatus: d.status }])
-      ),
-    })),
 }))

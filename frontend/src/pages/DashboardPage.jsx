@@ -4,7 +4,7 @@ import { useLatestSensorData, useDevices } from '../hooks/useDashboard'
 import SensorCard from '../components/dashboard/SensorCard'
 import ControlPanel from '../components/dashboard/ControlPanel'
 import { Fan, Droplets, Wind, Waves, Lightbulb } from 'lucide-react'
-import { io } from 'socket.io-client'
+import { useDashboardSocket } from '../hooks/useDashboardSocket'
 import toast from 'react-hot-toast'
 import dayjs from 'dayjs'
 
@@ -72,13 +72,8 @@ export default function DashboardPage() {
   }, [devicesData, initDevices])
 
   // Socket.io
-  useEffect(() => {
-    const socket = io(SOCKET_URL)
-
-    // Sensor update — update cards + append to chart in one state change
-    socket.on('sensor_data_update', (payload) => {
-      const { temperature, humidity, lux, moisture, createdAt } = payload
-
+  useDashboardSocket({
+    onSensorUpdate: ({ temperature, humidity, lux, moisture, createdAt }) => {
       setDashboardData(prev => ({
         liveValues: { temperature, humidity, lux, moisture },
         chartHistory: {
@@ -88,22 +83,16 @@ export default function DashboardPage() {
           light:       [...prev.chartHistory.light,       { value: lux,         measuredAt: createdAt }].slice(-20),
         }
       }))
-    })
-
-    // Device update — resolve or fail the pending switch
-    socket.on('device_status_update', (payload) => {
-      const { actionId, status, deviceStatus, message } = payload
-
+    },
+    onDeviceUpdate: ({ actionId, status, deviceStatus, message }) => {
       if (status === 'SUCCESS') {
         resolveDevice(actionId, deviceStatus)
       } else {
         failDevice(actionId)
         toast.error(message ?? 'Device action failed')
       }
-    })
-
-    return () => socket.disconnect()
-  }, [resolveDevice, failDevice])
+    },
+  })
 
   if (loadingSensors || loadingDevices) {
     return <div className="text-sm text-gray-400 py-12 text-center">Loading...</div>
