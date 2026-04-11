@@ -13,6 +13,7 @@ const { cleanupPendingActions } = require('./services/startup.service');
 const sensorDataRoutes = require('./routers/sensor-data.route')
 const actionRoutes = require('./routers/action.route')
 const deviceRoutes = require('./routers/device.route')
+const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
 const server = http.createServer(app); // Tạo server từ app express
@@ -31,6 +32,8 @@ app.use('/api/sensor-data', sensorDataRoutes);
 app.use('/api/actions', actionRoutes);
 app.use('/api/devices', deviceRoutes);
 
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
 connectDB();
 

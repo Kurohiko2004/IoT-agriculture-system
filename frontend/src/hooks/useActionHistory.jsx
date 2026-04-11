@@ -7,7 +7,7 @@ export function useActionHistory({ search, status, sortOrder, limit, page }) {
     queryKey: ['action-history', search, status, sortOrder, limit, page],
     queryFn: async () => {
     const params = new URLSearchParams({
-      ...(status && { status }),
+      ...(status && { status: status }),
       items: limit,
       page,
       search,
