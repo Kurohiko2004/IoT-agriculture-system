@@ -45,7 +45,13 @@ export default function SensorDataPage() {
   }
 
   function cellRenderer(colKey, row) {
-    if (colKey === 'sensor.name') return row.type
+    if (colKey === 'sensor.name') 
+      return row.type
+      // return (
+      //   <span className={valueColorMap[row.type] ?? 'text-gray-700'}>
+      //     {row.type}
+      //   </span>
+      // )
     if (colKey === 'value') {
       return (
         <span className={valueColorMap[row.type] ?? 'text-gray-700'}>

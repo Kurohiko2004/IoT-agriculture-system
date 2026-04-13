@@ -14,23 +14,22 @@ const startActionTimeout = (actionId, deviceId, delayMs) => {
             // 2. Kiểm tra trong DB xem action.status có còn là PENDING ko
             const record = await db.Action.findByPk(actionId);
 
-            // TODO: refactor, dùng early return để đỡ lồng if nhiều
             if (record && record.status === 'PENDING') {
-                // 3. Phán quyết lỗi TIMEOUT vào DB
+                // 3. Update status 
                 await record.update(
                     { status: 'TIMEOUT' }
                 );
 
                 // 4. Bắn thông báo về FE qua WebSocket
-                emitDeviceUpdate({ 
-                    actionId: actionId, 
-                    deviceId: deviceId, 
+                emitDeviceUpdate({
+                    actionId: actionId,
+                    deviceId: deviceId,
                     status: 'TIMEOUT',
                     action: record.action,
-                    message: `Hết thời gian chờ (${delayMs/1000}s), thiết bị không phản hồi!`
+                    message: `Hết thời gian chờ (${delayMs / 1000}s), thiết bị không phản hồi!`
                 });
 
-                console.log(`[TIMEOUT] Lệnh ${actionId} thất bại sau ${delayMs/1000}s`);
+                console.log(`[TIMEOUT] Lệnh ${actionId} thất bại sau ${delayMs / 1000}s`);
             }
         } catch (error) {
             console.error(`[LỖI TIMEOUT]`, error);
