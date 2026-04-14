@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useActionHistory } from '../hooks/useActionHistory'
+import { useDevices } from '../hooks/useDashboard'
 import FilterBar from '../components/shared/FilterBar'
 import DataTable from '../components/shared/DataTable'
 import StatusBadge from '../components/shared/StatusBadge'
@@ -22,12 +23,17 @@ const statusOptions = [
 export default function ActionHistoryPage() {
   const [search,    setSearch]    = useState('')
   const [status,    setStatus]    = useState('')
+  const [deviceId,  setDeviceId]  = useState('')
   const [sortOrder, setSortOrder] = useState('DESC')
   const [limit,     setLimit]     = useState(10)
   const [page,      setPage]      = useState(1)
 
+  const { data: devicesData } = useDevices()
+  const devices = devicesData ?? []
+  const deviceOptions = devices.map(d => ({ value: d.id, label: d.name }))
+
   const { data, isLoading, isError } = useActionHistory({
-    search, status, sortOrder, limit, page,
+    search, status, sortOrder, limit, page, deviceId,
   })
 
   const rows       = data?.data         ?? []
@@ -57,6 +63,9 @@ export default function ActionHistoryPage() {
         typeLabel="Status"
         typeOptions={statusOptions}
         typeValue={status}      onTypeChange={handleFilterChange(setStatus)}
+        secondTypeLabel="Device"
+        secondTypeOptions={deviceOptions}
+        secondTypeValue={deviceId} onSecondTypeChange={handleFilterChange(setDeviceId)}
         showSort
         sortValue={sortOrder}   onSortChange={handleFilterChange(setSortOrder)}
         limitValue={limit}      onLimitChange={handleFilterChange(setLimit)}

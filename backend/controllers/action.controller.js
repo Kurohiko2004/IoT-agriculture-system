@@ -4,7 +4,7 @@ const { getPagination, getPagingData } = require('../utils/pagination.util');
 const asyncHandler = require('../utils/async-handler.util');
 
 const getAction = asyncHandler(async (req, res) => {
-    const { page, items, status, sortBy, sortOrder, search } = req.query;
+    const { page, items, status, sortBy, sortOrder, search, deviceId } = req.query;
 
     // console.log(req.query);
 
@@ -12,7 +12,7 @@ const getAction = asyncHandler(async (req, res) => {
 
     // Gọi trực tiếp Model method (Fat Model)
     const dbResult = await db.Action.findAllAction({
-        limit, offset, status, search, sortBy, sortOrder
+        limit, offset, status, search, sortBy, sortOrder, deviceId
     });
 
     // Trả về response theo format chuẩn của dự án

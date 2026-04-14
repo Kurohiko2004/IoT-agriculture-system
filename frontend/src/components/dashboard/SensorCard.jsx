@@ -50,7 +50,7 @@ export default function SensorCard({ type, value, data }) {
               <Tooltip
                   contentStyle={{ fontSize: 12 }}
                   formatter={(val) => [`${val}${config.unit}`, config.label]}
-                  labelFormatter={(label) => `Time: ${label}`}
+                  labelFormatter={(label) => `Measured at: ${label}`}
               />
 
               <ReferenceLine

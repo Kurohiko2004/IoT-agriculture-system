@@ -102,7 +102,7 @@ export default function DashboardPage() {
   function getChartData(type) {
     return (dashboardData.chartHistory[type] ?? []).map(d => ({
       value: d.value,
-      time:  dayjs(d.measuredAt).format('HH:mm:ss'),
+      time:  dayjs(d.measuredAt).format('DD/MM/YYYY HH:mm:ss'),
     }))
   }
 

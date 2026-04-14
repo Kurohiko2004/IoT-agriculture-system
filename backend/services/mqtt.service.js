@@ -16,7 +16,6 @@ class MqttService {
         const url = `mqtt://${mqttConfig.host}:${mqttConfig.port}`;
         this.client = mqtt.connect(url, mqttConfig.options);
 
-        // Dùng arrow function để giữ ngữ cảnh 'this'
         // 1. event kết nối thành công
         this.client.on('connect', () => {
             console.log('MQTT Connected');
@@ -28,15 +27,13 @@ class MqttService {
         });
 
         // 2. event nhận message, gọi hàm xử lý tương ứng với topic 
-        // Dùng arrow function để giữ ngữ cảnh 'this'
         this.client.on('message', async (topic, message) => {
-            // const payload = message.toString();
             const payloadString = message.toString();
-            
+
             try {
                 if (topic === mqttConfig.topics.data) {
                     await this.handleSensorData(payloadString);
-                } 
+                }
                 if (topic === mqttConfig.topics.ack) {
                     this.handleAck(payloadString);
                 }
@@ -62,61 +59,22 @@ class MqttService {
             return;
         }
 
-        const records = [];
-        try {
-            if (data.temp !== undefined) {
-                records.push({ value: data.temp, type: 'temperature', sensorId: 1 });
-            }
-            if (data.humidity !== undefined) {
-                records.push({ value: data.humidity, type: 'humidity', sensorId: 1 });
-            }
-            if (data.lux !== undefined) {
-                records.push({ value: data.lux, type: 'light', sensorId: 2 });
-            }
-            if (data.moisture !== undefined) {
-                records.push({ value: data.moisture, type: 'moisture', sensorId: 3 }); // Giả sử ID sensor mới là 4
-            }
-
-            if (records.length > 0) {
-                // 1. Lưu vào Database
-                await db.SensorData.bulkCreate(records);
-
-                // 2. Bắn qua Socket (Hiển thị thời gian thực)
-                // Gói tin gửi đi nên gọn gàng để FE dễ xử lý
-                emitSensorData({
-                    temperature: data.temp,
-                    humidity: data.humidity,
-                    lux: data.lux,
-                    moisture: data.moisture,
-                    createdAt: new Date()
-                });
-                // console.log(`💾 DB & Socket: Đã xử lý ${records.length} chỉ số cảm biến.`);
-            }
-        } catch (err) {
-            console.error('❌ Database Error');
-            console.error('Records:', records);
-            console.error(err.message);
-            console.error(err);
-        }
+        eventBus.emit('MQTT_DATA_RECEIVED', data);
     }
 
     // Khi ESP32 gửi tin nhắn xác nhận về
     handleAck(payload) {
         try {
             const data = JSON.parse(payload);
-            
-            // validate deviceId và actionId
+
             if (data.actionId && data.deviceId) {
-                console.log(`📩 Received ACK for Action: ${data.actionId}`);
-                
-                // Phát tín hiệu để action.handler.js xử lý logic DB & Socket
-                eventBus.emit('MQTT_ACK_RECEIVED', data); 
+                console.log(`Received ACK for Action: ${data.actionId}`);
+                eventBus.emit('MQTT_ACK_RECEIVED', data);
             } else {
-                console.warn('⚠️ Gói tin ACK thiếu thông tin:', data);
+                console.warn('Gói tin ACK thiếu thông tin:', data);
             }
-            
         } catch (e) {
-            console.error('❌ Lỗi xử lý JSON ACK:', e.message);
+            console.error(' Lỗi xử lý JSON ACK:', e.message);
         }
     }
 

@@ -7,12 +7,14 @@ const mqttService = require('./services/mqtt.service');
 const http = require('http'); 
 const socketService = require('./services/socket.service');
 require('./services/action.handler');
+require('./services/sensor.handler');
 const { cleanupPendingActions } = require('./services/startup.service');
 
 
 const sensorDataRoutes = require('./routers/sensor-data.route')
 const actionRoutes = require('./routers/action.route')
 const deviceRoutes = require('./routers/device.route')
+const statsRoutes = require('./routers/stats.route')
 const errorHandler = require('./middlewares/error.middleware');
 
 const app = express();
@@ -31,6 +33,7 @@ app.use(express.json());
 app.use('/api/sensor-data', sensorDataRoutes);
 app.use('/api/actions', actionRoutes);
 app.use('/api/devices', deviceRoutes);
+app.use('/api/stats', statsRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

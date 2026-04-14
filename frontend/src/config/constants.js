@@ -50,5 +50,6 @@ export const ROUTES = {
   DASHBOARD:      '/',
   SENSOR_DATA:    '/sensor-data',
   ACTION_HISTORY: '/action-history',
+  DEVICE_STATS:   '/device-stats',
   PROFILE:        '/profile',
 }

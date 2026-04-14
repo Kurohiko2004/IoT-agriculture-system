@@ -1,13 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { API_BASE_URL } from '../config/constants'
 
-export function useActionHistory({ search, status, sortOrder, limit, page }) {
+export function useActionHistory({ search, status, sortOrder, limit, page, deviceId }) {
 
   return useQuery({
-    queryKey: ['action-history', search, status, sortOrder, limit, page],
+    queryKey: ['action-history', search, status, sortOrder, limit, page, deviceId],
     queryFn: async () => {
     const params = new URLSearchParams({
       ...(status && { status: status }),
+      ...(deviceId && { deviceId: deviceId }),
       items: limit,
       page,
       search,

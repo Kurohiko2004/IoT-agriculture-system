@@ -7,6 +7,9 @@ const getActionSchema = Joi.object({
     // Lọc theo trạng thái (PENDING, on, off, auto_off...)
     status: Joi.string().max(20).optional().empty(''),
     
+    // Lọc theo deviceId
+    deviceId: Joi.number().integer().optional().empty(''),
+    
     // Tìm kiếm theo tên hành động hoặc thời gian
     search: Joi.string().max(50).optional().allow('', null),
     

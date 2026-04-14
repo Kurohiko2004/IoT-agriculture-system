@@ -1,6 +1,7 @@
 export default function FilterBar({
   search, onSearchChange,
   typeLabel = 'Type', typeOptions = [], typeValue, onTypeChange,
+  secondTypeLabel, secondTypeOptions = [], secondTypeValue, onSecondTypeChange,
   showSort = false, sortValue, onSortChange,
   limitValue, onLimitChange,
 }) {
@@ -35,6 +36,23 @@ export default function FilterBar({
             ))}
           </select>
         </div>
+
+        {/* Second Type filter — for additional filters like Device */}
+        {secondTypeLabel && secondTypeOptions.length > 0 && (
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">{secondTypeLabel}:</span>
+            <select
+              value={secondTypeValue}
+              onChange={e => onSecondTypeChange(e.target.value)}
+              className="text-sm border border-gray-200 rounded-md px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-gray-300"
+            >
+              <option value="">All</option>
+              {secondTypeOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
         {/* Sort — only on Sensor Data */}
         {showSort && (

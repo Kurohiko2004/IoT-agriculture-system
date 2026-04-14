@@ -5,6 +5,7 @@ const links = [
   { to: ROUTES.DASHBOARD,      label: 'Dashboard' },
   { to: ROUTES.SENSOR_DATA,    label: 'Sensor Data' },
   { to: ROUTES.ACTION_HISTORY, label: 'Action History' },
+  { to: ROUTES.DEVICE_STATS,   label: 'Device Stats' },
   { to: ROUTES.PROFILE,        label: 'Profile' },
 ]
 
