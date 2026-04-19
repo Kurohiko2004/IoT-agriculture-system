@@ -13,6 +13,24 @@ export const useDeviceStore = create((set) => ({
       ),
     })),
 
+  // initDevices: function (deviceList) {
+  //   set(function () {
+  //     const devicesObj = {}
+
+  //     for (const d of deviceList) {
+  //       devicesObj[d.id] = {
+  //         status: d.status,
+  //         actionId: null,
+  //         prevStatus: d.status
+  //       }
+  //     }
+
+  //     return {
+  //       devices: devicesObj
+  //     }
+  //   })
+  // }
+
   setDevicePending: (deviceId, actionId) =>
     set((state) => {
       const current = state.devices[deviceId]

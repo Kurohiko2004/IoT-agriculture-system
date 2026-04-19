@@ -206,9 +206,20 @@ components:
           format: date-time
         type:
           type: string
-        sensor_id:
+        sensorId:
           type: integer
           format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        sensor:
+          type: object
+          properties:
+            name:
+              type: string
 
     device:
       type: object
@@ -241,16 +252,23 @@ components:
     paginated_sensor_data:
       type: object
       properties:
-        page:
-          type: integer
-        items:
-          type: integer
-        total:
-          type: integer
+        success:
+          type: boolean
         data:
           type: array
           items:
             $ref: "#/components/schemas/sensor_data"
+        pagination:
+          type: object
+          properties:
+            totalItems:
+              type: integer
+            totalPages:
+              type: integer
+            currentPage:
+              type: integer
+            itemsPerPage:
+              type: integer
 
     paginated_action:
       type: object
