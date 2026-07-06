@@ -44,9 +44,16 @@ function buildChartData(apiData, from, to, actionFilter) {
   const dateMap = {}
   for (const date of allDates) dateMap[date] = { date }
 
+//   dateMap = {
+//   "2026-04-01": { date: "2026-04-01" },
+//   "2026-04-02": { date: "2026-04-02" },
+//   "2026-04-03": { date: "2026-04-03" }
+// }
+
   for (const device of apiData) {
     for (const stat of device.stats) {
       if (!dateMap[stat.date]) dateMap[stat.date] = { date: stat.date }
+      
       if (actionFilter !== 'OFF')
         dateMap[stat.date][`${device.deviceName} ON`]  = stat.TURN_ON  ?? 0
       if (actionFilter !== 'ON')
@@ -54,20 +61,33 @@ function buildChartData(apiData, from, to, actionFilter) {
     }
   }
 
+  // {
+  //   "2026-05-01": {
+  //     date: "2026-05-01",
+  //     "Lamp ON": 5,
+  //     "Lamp OFF": 2,
+  //     "Fan ON": 3,
+  //     "Fan OFF": 1
+  //   },
+  //   "2026-05-02": {
+  //     date: "2026-05-02"
+  //   }
+  // }
+
   return allDates.map((d) => ({ ...dateMap[d], label: dayjs(d).format('DD/MM') }))
 }
 
 export default function DeviceStatsPage() {
-  const today   = dayjs().format('YYYY-MM-DD')
+  const today = dayjs().format('YYYY-MM-DD')
   const weekAgo = dayjs().subtract(6, 'day').format('YYYY-MM-DD')
 
-  const [from,         setFrom]         = useState(weekAgo)
-  const [to,           setTo]           = useState(today)
+  const [from, setFrom] = useState(weekAgo)
+  const [to, setTo] = useState(today)
   const [actionFilter, setActionFilter] = useState('ALL')   // 'ALL' | 'ON' | 'OFF'
 
   const { data, isLoading, isError } = useDeviceStats({ from, to })
 
-  const apiData   = data?.data ?? []
+  const apiData = data?.data ?? []
   const chartData = useMemo(
     () => buildChartData(apiData, from, to, actionFilter),
     [apiData, from, to, actionFilter]

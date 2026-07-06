@@ -1,5 +1,6 @@
 const db = require('../models');
 
+// TODO: chuyển ra đâu đó
 const cleanupPendingActions = async () => {
     try {
         const [affectedCount] = await db.Action.update(

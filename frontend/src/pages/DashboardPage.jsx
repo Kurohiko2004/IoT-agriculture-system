@@ -39,18 +39,20 @@ export default function DashboardPage() {
   const { data: sensorData, isLoading: loadingSensors } = useLatestSensorData()
   const { data: devicesData, isLoading: loadingDevices } = useDevices()
 
-  // Combined state to avoid cascading renders
   const [dashboardData, setDashboardData] = useState({
     liveValues: null,
     chartHistory: { temperature: [], humidity: [], moisture: [], light: [] }
   })
 
-  // Seed initial values from REST
+  // group data theo loại thông số từ API
   useEffect(() => {
-    if (!sensorData) return
+    if (!sensorData) return;
 
-    const grouped = { temperature: [], humidity: [], moisture: [], light: [] }
+    const grouped = { temperature: [], humidity: [], moisture: [], light: [] };
     for (const point of sensorData.history ?? []) {
+
+      // validate data
+      //  chỉ xử lý nếu point.type (temp, humid, ...) là key hợp lệ trong grouped
       if (grouped[point.type]) {
         grouped[point.type].push({
           value: point.value,
@@ -73,6 +75,7 @@ export default function DashboardPage() {
 
   // Socket.io
   useDashboardSocket({
+    // 1. callback 1
     onSensorUpdate: ({ temperature, humidity, lux, moisture, createdAt }) => {
       setDashboardData(prev => ({
         liveValues: { temperature, humidity, lux, moisture },
@@ -84,11 +87,13 @@ export default function DashboardPage() {
         }
       }))
     },
-    onDeviceUpdate: ({ actionId, status, deviceStatus, message }) => {
+
+    // 2. callback 2
+    onDeviceUpdate: ({ actionId, deviceId, status, deviceStatus, message }) => {
       if (status === 'SUCCESS') {
-        resolveDevice(actionId, deviceStatus)
+        resolveDevice(deviceId, actionId, deviceStatus)
       } else {
-        failDevice(actionId)
+        failDevice(deviceId, actionId)
         toast.error(message ?? 'Device action failed')
       }
     },

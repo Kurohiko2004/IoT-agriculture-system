@@ -2,12 +2,15 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
+// TODO: refactor into server.js and app.js'
+// TODO: check which db connection config is used then clean up
+// TODO: refactor cleanupPendingActions (move to utils?)
+
 const connectDB = require('./config/connectDB')
 const mqttService = require('./services/mqtt.service');
 const http = require('http'); 
 const socketService = require('./services/socket.service');
-require('./services/action.handler');
-require('./services/sensor.handler');
+require('./services/event.handler.js');
 const { cleanupPendingActions } = require('./services/startup.service');
 
 
@@ -29,7 +32,6 @@ app.use(cors({
     credentials: true  // nếu dùng cookie/session
 }));
 app.use(express.json());
-
 app.use('/api/sensor-data', sensorDataRoutes);
 app.use('/api/actions', actionRoutes);
 app.use('/api/devices', deviceRoutes);

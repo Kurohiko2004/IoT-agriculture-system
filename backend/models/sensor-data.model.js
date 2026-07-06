@@ -61,8 +61,6 @@ module.exports = (sequelize, DataTypes) => {
       });
     }
 
-    // models/sensordata.js
-
     static async getLatestSensorData() {
       // 1. Lấy 50 bản ghi gần nhất để vẽ Chart
       const rawData = await this.findAll({

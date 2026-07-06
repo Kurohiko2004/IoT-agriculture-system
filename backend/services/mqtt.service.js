@@ -59,7 +59,7 @@ class MqttService {
             return;
         }
 
-        eventBus.emit('MQTT_DATA_RECEIVED', data);
+        eventBus.emit('MQTT_DATA_RECEIVED', data); // <------------
     }
 
     // Khi ESP32 gửi tin nhắn xác nhận về
@@ -69,7 +69,10 @@ class MqttService {
 
             if (data.actionId && data.deviceId) {
                 console.log(`Received ACK for Action: ${data.actionId}`);
-                eventBus.emit('MQTT_ACK_RECEIVED', data);
+
+
+                eventBus.emit('MQTT_ACK_RECEIVED', data); // <---------------
+
             } else {
                 console.warn('Gói tin ACK thiếu thông tin:', data);
             }

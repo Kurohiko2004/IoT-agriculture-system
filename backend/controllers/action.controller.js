@@ -6,8 +6,6 @@ const asyncHandler = require('../utils/async-handler.util');
 const getAction = asyncHandler(async (req, res) => {
     const { page, items, status, sortBy, sortOrder, search, deviceId } = req.query;
 
-    // console.log(req.query);
-
     const { limit, offset, currentPage } = getPagination(page, items);
 
     // Gọi trực tiếp Model method (Fat Model)

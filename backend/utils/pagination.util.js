@@ -1,6 +1,6 @@
 'use strict';
 
-
+// TODO: sync 'limit' (change name) between fe and be, check json return of getPagingData
 const ALLOWED_ITEMS = [5, 10, 15, 20];
 
 /**

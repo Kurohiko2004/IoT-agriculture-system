@@ -30,6 +30,9 @@ export default function DeviceSwitch({ device, color }) {
         body:    JSON.stringify({ action }),
       })
       if (!res.ok) throw new Error()
+
+      // backend phản hồi về actionId, sau đó gọi setDevicePending để cho nút thành 
+      // trạng thái pending.
       const data = await res.json()
       setDevicePending(device.id, data.actionId)
     } catch {

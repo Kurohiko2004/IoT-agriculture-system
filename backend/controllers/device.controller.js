@@ -1,7 +1,7 @@
 const db = require('../models');
 const asyncHandler = require('../utils/async-handler.util');
 const mqttService = require('../services/mqtt.service');
-const timeoutService = require('../services/timeout.service');
+const timeoutService = require('../services/event.handler');
 const mqttConfig = require('../config/mqtt.config');
 
 const TIMEOUT_INTERVAL = 5000;
