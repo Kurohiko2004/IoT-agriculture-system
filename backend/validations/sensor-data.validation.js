@@ -7,15 +7,14 @@ const getSensorDataSchema = Joi.object({
     items: Joi.number().integer().valid(5, 10, 15, 20).default(10),
 
     // Type chỉ được phép là 1 trong 3 loại này
-
-    type: Joi.string().valid('temperature', 'humidity', 'light', 'moisture').optional(),
+    type: Joi.string().valid(...Object.values(SensorType)).optional(),
 
     // Search tối đa 50 ký tự để tránh spam chuỗi dài gây lag DB
     search: Joi.string().max(50).allow('', null).optional(),
 
     // Sắp xếp theo các cột hợp lệ
-    sortBy: Joi.string().valid('measuredAt', 'value').default('measuredAt'),
-    sortOrder: Joi.string().valid('ASC', 'DESC').default('DESC')
+    sortBy: Joi.string().valid(...Object.values(SortBy)).default('measuredAt'),
+    sortOrder: Joi.string().valid(...Object.values(SortOrder)).default('DESC')
 });
 
 module.exports = { getSensorDataSchema };

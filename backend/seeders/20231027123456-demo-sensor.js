@@ -1,5 +1,7 @@
 'use strict';
 
+// TODO: remove demo-sensor, name should be type of sensor
+
 module.exports = {
   async up (queryInterface, Sequelize) {
     await queryInterface.bulkInsert('Sensors', [

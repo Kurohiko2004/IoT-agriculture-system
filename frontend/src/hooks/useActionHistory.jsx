@@ -3,6 +3,8 @@ import { API_BASE_URL } from '../config/constants'
 
 export function useActionHistory({ search, status, sortOrder, limit, page, deviceId }) {
 
+
+  // TODO: refactor tường minh
   return useQuery({
     queryKey: ['action-history', search, status, sortOrder, limit, page, deviceId],
     queryFn: async () => {

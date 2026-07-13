@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 
 export function useDashboardSocket({ onSensorUpdate, onDeviceUpdate }) {
   useEffect(() => {
+    // tạo kết nối socket đến backend (SOCKET_URL = http://localhost:3000)
     const socket = io(SOCKET_URL)
 
     socket.on('sensor_data_update', (payload) => {
