@@ -3,7 +3,7 @@
 const eventBus = require('../utils/event-bus');
 const db = require('../models');
 const { emitDeviceUpdate, emitSensorData } = require('./socket.service');
-
+const redisService = require('./redis.service');
 const activeTimeouts = new Map(); // Sổ tay lưu các bộ đếm đang chạy
 
 // TODO: move startActionTimeout to controller? 
@@ -57,38 +57,82 @@ const clearActionTimeout = (actionId) => {
 
 eventBus.on('MQTT_DATA_RECEIVED', async (data) => {
     const records = [];
+    const now = new Date();
     try {
         if (data.temp !== undefined) {
-            records.push({ value: data.temp, type: 'temperature', sensorId: 1 });
+            records.push({ value: data.temp, type: 'temperature', sensorId: 1, measuredAt: now });
         }
         if (data.humidity !== undefined) {
-            records.push({ value: data.humidity, type: 'humidity', sensorId: 1 });
+            records.push({ value: data.humidity, type: 'humidity', sensorId: 1, measuredAt: now });
         }
         if (data.lux !== undefined) {
-            records.push({ value: data.lux, type: 'light', sensorId: 2 });
+            records.push({ value: data.lux, type: 'light', sensorId: 2, measuredAt: now });
         }
         if (data.moisture !== undefined) {
-            records.push({ value: data.moisture, type: 'moisture', sensorId: 3 });
+            records.push({ value: data.moisture, type: 'moisture', sensorId: 3, measuredAt: now });
         }
 
         if (records.length > 0) {
-            // 1. Lưu vào Database
-            await db.SensorData.bulkCreate(records);
+            // 1. Lưu vào Redis Cache thay vì ghi trực tiếp vào MySQL DB
+            for (const record of records) {
+                await redisService.rPush('sensor_data_queue', record);
+            }
+            console.log(`📝 Redis Cache: Đã lưu tạm ${records.length} chỉ số cảm biến vào hàng đợi Redis.`);
 
-            // 2. Bắn qua Socket (Hiển thị thời gian thực cho Dashboard)
+            // 2. Vẫn bắn qua Socket ngay lập tức để giao diện hiển thị thời gian thực
             emitSensorData({
                 temperature: data.temp,
                 humidity: data.humidity,
                 lux: data.lux,
                 moisture: data.moisture,
-                createdAt: new Date()
+                createdAt: now
             });
-            console.log(`💾 DB & Socket: Đã xử lý ${records.length} chỉ số cảm biến từ EventBus.`);
         }
     } catch (err) {
         console.error('❌ Lỗi xử lý dữ liệu cảm biến trong SensorHandler:', err.message);
     }
 });
+
+const flushSensorDataToDb = async () => {
+    console.log('🔄 [FLUSH] Bắt đầu đồng bộ dữ liệu từ Redis vào Database...');
+    const queueKey = 'sensor_data_queue';
+    try {
+        const queueExists = await redisService.exists(queueKey);
+        if (!queueExists) {
+            console.log('🔄 [FLUSH] Không có dữ liệu cảm biến mới trong Redis cache để đồng bộ.');
+            return;
+        }
+
+        const tempKey = `${queueKey}_temp_${Date.now()}`;
+        // Đổi tên key một cách nguyên tử (atomic rename) để khóa hàng đợi hiện tại, 
+        // tránh xung đột nếu có bản ghi mới đẩy vào trong khi đang bulkCreate.
+        const renamed = await redisService.rename(queueKey, tempKey);
+        if (!renamed) {
+            console.log('🔄 [FLUSH] Không thể khóa hàng đợi Redis (có thể hàng đợi trống).');
+            return;
+        }
+
+        const cachedRecords = await redisService.lRange(tempKey, 0, -1);
+        if (cachedRecords && cachedRecords.length > 0) {
+            console.log(`🔄 [FLUSH] Tìm thấy ${cachedRecords.length} bản ghi trong Redis cache.`);
+            await db.SensorData.bulkCreate(cachedRecords);
+            console.log(`💾 [FLUSH] Đã lưu thành công ${cachedRecords.length} bản ghi vào Database.`);
+        }
+
+        // Xóa tệp tạm sau khi hoàn tất ghi DB
+        await redisService.del(tempKey);
+        console.log('🧹 [FLUSH] Đã dọn dẹp Redis cache.');
+    } catch (err) {
+        console.error('❌ [FLUSH LỖI] Không thể đồng bộ dữ liệu cảm biến từ Redis vào Database:', err.message);
+    }
+};
+
+// Lập lịch flush định kỳ (mặc định 300 giây)
+const FLUSH_INTERVAL = (parseInt(process.env.DB_FLUSH_INTERVAL_SEC, 10) || 300) * 1000;
+const flushIntervalId = setInterval(flushSensorDataToDb, FLUSH_INTERVAL);
+if (typeof flushIntervalId.unref === 'function') {
+    flushIntervalId.unref(); // Cho phép script test/process thoát sạch mà không bị treo bởi timer này
+}
 
 eventBus.on('MQTT_ACK_RECEIVED', async (payload) => {
     const t = await db.sequelize.transaction();
@@ -152,5 +196,6 @@ eventBus.on('MQTT_ACK_RECEIVED', async (payload) => {
 
 module.exports = {
     startActionTimeout,
-    clearActionTimeout
+    clearActionTimeout,
+    flushSensorDataToDb
 };

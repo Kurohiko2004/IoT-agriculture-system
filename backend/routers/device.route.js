@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const deviceController = require('../controllers/device.controller.js');
 
-const validate = require('../seeders/middlewares/validate.middleware.js');
+const validate = require('../middlewares/validate.middleware.js');
 const { controlDeviceSchema } = require('../validations/device.validation.js');
 const { idSchema } = require('../validations/common.validation.js');
 
